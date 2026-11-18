@@ -1,0 +1,74 @@
+import { z } from "zod";
+import {
+  COMMUTE_OPTIONS,
+  CONDITION_OPTIONS,
+  COOKING_FUEL_OPTIONS,
+  HEATING_FUEL_OPTIONS,
+  HOME_OPTIONS,
+  optionValues,
+} from "./options";
+
+/** Letters, digits, spaces and basic punctuation only: no markup, quotes or control characters. */
+const LOCATION_PATTERN = /^[\p{L}\p{N}\s,.'-]+$/u;
+
+const locationSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("query"),
+    query: z
+      .string()
+      .trim()
+      .min(2, "Enter at least 2 characters for the city or ZIP code.")
+      .max(80, "Location must be 80 characters or fewer.")
+      .regex(LOCATION_PATTERN, "Location may only contain letters, numbers, spaces and , . ' -"),
+  }),
+  z.strictObject({
+    kind: z.literal("coords"),
+    latitude: z.number().min(-90).max(90),
+    longitude: z.number().min(-180).max(180),
+  }),
+]);
+
+/** Everything the user tells us. Closed enums plus one pattern-checked string keep injection surface tiny. */
+export const profileSchema = z.strictObject({
+  location: locationSchema,
+  hasChildren: z.boolean(),
+  hasElderly: z.boolean(),
+  conditions: z.array(z.enum(optionValues(CONDITION_OPTIONS))).max(CONDITION_OPTIONS.length),
+  commute: z.enum(optionValues(COMMUTE_OPTIONS)),
+  home: z.enum(optionValues(HOME_OPTIONS)),
+  cookingFuel: z.enum(optionValues(COOKING_FUEL_OPTIONS)),
+  heatingFuel: z.enum(optionValues(HEATING_FUEL_OPTIONS)),
+});
+
+const text = (max: number) => z.string().trim().min(1).max(max);
+
+const suggestionSchema = z.strictObject({
+  title: text(80),
+  detail: text(300),
+  // Rejects vague claims: every impact must carry a number or range.
+  impact: text(200).refine((value) => /\d/.test(value), "Impact must be quantified."),
+});
+
+const suggestionList = z.array(suggestionSchema).min(3).max(5);
+
+/** The structure Gemini must return. Also used to build the JSON schema sent to the model. */
+export const adviceSchema = z.strictObject({
+  snapshotSummary: text(400),
+  routine: suggestionList,
+  indoorHacks: suggestionList,
+  alternatives: suggestionList,
+});
+
+export type Profile = z.infer<typeof profileSchema>;
+
+/**
+ * The lifestyle part of a profile (everything except the location), used in prompts and cache keys.
+ * @param profile - Validated household profile.
+ * @returns The profile without its location.
+ */
+export function householdOf(profile: Profile) {
+  const { hasChildren, hasElderly, conditions, commute, home, cookingFuel, heatingFuel } = profile;
+  return { hasChildren, hasElderly, conditions, commute, home, cookingFuel, heatingFuel };
+}
+export type Advice = z.infer<typeof adviceSchema>;
+export type Suggestion = z.infer<typeof suggestionSchema>;

@@ -1,0 +1,363 @@
+/*
+ * Colour tokens. Each `--x-bg` / `--x-fg` pair is checked for WCAG AA contrast by
+ * tests/contrast.test.ts, so a failing pair fails CI.
+ */
+:root {
+  color-scheme: light;
+  --page-bg: #f6f8fa;
+  --page-fg: #16202a;
+  --surface-bg: #ffffff;
+  --surface-fg: #16202a;
+  --muted-bg: #f6f8fa;
+  --muted-fg: #44505c;
+  --accent-bg: #0b4f8a;
+  --accent-fg: #ffffff;
+  --link-bg: #ffffff;
+  --link-fg: #0b4f8a;
+  --notice-bg: #fff4d6;
+  --notice-fg: #4a3200;
+  --danger-bg: #fde8e8;
+  --danger-fg: #7a1212;
+  --aqi-0-bg: #d8f3dc;
+  --aqi-0-fg: #10311a;
+  --aqi-1-bg: #fff3bf;
+  --aqi-1-fg: #3d3000;
+  --aqi-2-bg: #ffd8a8;
+  --aqi-2-fg: #4a2300;
+  --aqi-3-bg: #ffc9c9;
+  --aqi-3-fg: #5c0a0a;
+  --aqi-4-bg: #e5c9ff;
+  --aqi-4-fg: #2d0a4d;
+  --aqi-5-bg: #7a1f3d;
+  --aqi-5-fg: #ffffff;
+  --border: #6b7885;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--page-bg);
+  color: var(--page-fg);
+  font-family:
+    system-ui,
+    -apple-system,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+main,
+.site-header,
+.site-footer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+.site-header {
+  padding-top: 24px;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 1.35rem;
+}
+
+h3 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+h4 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+}
+
+a {
+  color: var(--link-fg);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent-bg);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -64px;
+  padding: 12px 16px;
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 8px;
+}
+
+.card {
+  background: var(--surface-bg);
+  color: var(--surface-fg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.notice {
+  background: var(--notice-bg);
+  color: var(--notice-fg);
+  border-left: 6px solid var(--notice-fg);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin: 16px 0;
+}
+
+.muted {
+  color: var(--muted-fg);
+}
+
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+}
+
+legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-bg);
+  color: var(--surface-fg);
+  font: inherit;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.check input {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  accent-color: var(--accent-bg);
+}
+
+.check label {
+  margin: 0;
+  font-weight: 400;
+}
+
+.grid {
+  display: grid;
+  gap: 0 16px;
+  grid-template-columns: 1fr;
+}
+
+button {
+  min-height: 44px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 2px solid var(--accent-bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent-bg);
+  color: var(--accent-fg);
+  width: 100%;
+}
+
+button.secondary {
+  background: var(--surface-bg);
+  color: var(--link-fg);
+}
+
+button[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.85;
+}
+
+.results {
+  margin: 24px 0;
+}
+
+.results:focus {
+  outline: none;
+}
+
+.results:focus-visible {
+  outline: 3px solid var(--accent-bg);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent-bg);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.error {
+  background: var(--danger-bg);
+  color: var(--danger-fg);
+  border-left: 6px solid var(--danger-fg);
+  border-radius: 6px;
+  padding: 12px 16px;
+}
+
+.place {
+  margin: 0 0 8px;
+  font-weight: 600;
+}
+
+.aqi-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding: 8px 14px;
+  border: 2px solid currentColor;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.aqi-0 {
+  background: var(--aqi-0-bg);
+  color: var(--aqi-0-fg);
+}
+.aqi-1 {
+  background: var(--aqi-1-bg);
+  color: var(--aqi-1-fg);
+}
+.aqi-2 {
+  background: var(--aqi-2-bg);
+  color: var(--aqi-2-fg);
+}
+.aqi-3 {
+  background: var(--aqi-3-bg);
+  color: var(--aqi-3-fg);
+}
+.aqi-4 {
+  background: var(--aqi-4-bg);
+  color: var(--aqi-4-fg);
+}
+.aqi-5 {
+  background: var(--aqi-5-bg);
+  color: var(--aqi-5-fg);
+}
+
+.readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 8px;
+}
+
+.readings dt {
+  color: var(--muted-fg);
+  font-size: 0.875rem;
+}
+
+.readings dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.suggestions {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestions li {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.suggestions li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.suggestions p {
+  margin: 0 0 6px;
+}
+
+.impact {
+  color: var(--link-fg);
+}
+
+.site-footer {
+  padding-bottom: 32px;
+  color: var(--muted-fg);
+  font-size: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  button.primary {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
