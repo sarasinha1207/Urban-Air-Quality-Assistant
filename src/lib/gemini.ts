@@ -5,16 +5,16 @@ import { buildChatInstruction, buildUserPrompt, SYSTEM_INSTRUCTION } from "./pro
 import { adviceSchema, type Advice, type ChatRequest, type Profile } from "./schemas";
 
 /**
- * Models tried in order. When probed, the lite models answered a full plan in about 3 s and have
- * their own quotas; 2.5 Flash is better but slower and its free quota runs out first. Models that
- * took 15 s or hung (gemini-3-flash-preview, gemini-flash-latest) are left out.
+ * Models tried in order. Probed with the project key, the first three answered a full plan in 2 to
+ * 4 s and were the most reliable; the "latest" aliases are fast when up but often return 503, so
+ * they come last. Models that took over 15 s or hung are left out.
  * Override with GEMINI_MODELS (comma-separated).
  */
 const DEFAULT_MODELS = [
-  "gemini-flash-lite-latest",
   "gemini-3.1-flash-lite",
   "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
+  "gemini-flash-lite-latest",
   "gemini-flash-latest",
 ];
 /** A model that failed is skipped for this long, so later requests do not wait on it again. */

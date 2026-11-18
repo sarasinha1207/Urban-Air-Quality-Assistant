@@ -48,8 +48,9 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 const suggestionSchema = z.strictObject({
   title: text(80),
   detail: text(200),
-  // Rejects vague claims: every impact must carry a number or range.
-  impact: text(120).refine((value) => /\d/.test(value), "Impact must be quantified."),
+  // Rejects vague claims: every impact must carry a number or range. A regex (not a refine) is
+  // used so it is also sent to Gemini as a JSON-schema `pattern` and constrains the output.
+  impact: text(120).regex(/\d/, "Impact must be quantified."),
 });
 
 const suggestionList = z.array(suggestionSchema).min(3).max(5);

@@ -1,21 +1,143 @@
 # Urban Air Quality Assistant
 
-A GenAI web app that helps families and communities get through severe winter smog. Enter a city or
-ZIP code (or use device location), describe your household and lifestyle, and get:
+> A Gemini-powered web app that helps families and communities get through severe winter smog.
 
-1. **Today's Air Snapshot** – live AQI and PM2.5 (Open-Meteo) explained for your household.
-2. **Low-Emission Daily Routine**
-3. **Indoor Air Hacks**
-4. **Sustainable Alternatives**
+## Description
 
-A floating **chat assistant** (bottom-right) answers follow-up questions about masks, purifiers,
-cooking smoke and more, and can see the reading currently on screen.
+Winter smog turns everyday choices into health decisions: whether children can play outside, which
+mask to wear, whether to open a window, how to cook and heat the home. Generic advice does not help
+because the right answer depends on **where you live, today's air and how your household lives**.
 
-Every suggestion carries a **"Your impact"** line that quantifies the effect of that choice.
-The plan is written by Google Gemini. If Gemini or the air-quality API fails, the app degrades
-gracefully (see [Failure handling](#failure-handling)).
+Urban Air Quality Assistant asks a few simple questions (location, who lives at home, commute, home
+type, cooking and heating fuel), reads the **live air quality** for that place and uses **Google
+Gemini** to write a personal plan with four parts:
 
-## Quick start
+1. **Today's Air Snapshot**: live AQI and PM2.5, explained for your household.
+2. **Low-Emission Daily Routine**: what to do through the day.
+3. **Indoor Air Quality Hacks**: practical ways to keep indoor air cleaner.
+4. **Sustainable Alternatives**: lower-emission swaps for commuting, cooking and heating.
+
+Every suggestion ends with a **"Your impact"** line that quantifies the direct effect of that choice
+(for example "about 40% faster removal of indoor smoke"). A floating **chat assistant** answers
+follow-up questions and can see the reading currently on screen.
+
+![Dashboard with the live snapshot and the three plan sections](docs/dashboard-plan.png)
+
+![Floating chat assistant answering a question about children and outdoor play](docs/chat-assistant.png)
+
+## How it works
+
+```
+Browser form ──► POST /api/advice
+                   │ 1. rate limit, size and content-type checks
+                   │ 2. Zod validation of every field
+                   │ 3. geocode the place        (Open-Meteo; OpenStreetMap for non-US postcodes)
+                   │ 4. live AQI / PM2.5         (Open-Meteo Air Quality)
+                   │ 5. Gemini writes the plan   (instructions and user data kept apart,
+                   │                              JSON schema output, re-validated with Zod)
+                   ▼ 6. dashboard renders snapshot + 3 sections, each with "Your impact"
+Chat widget ───► POST /api/chat ──► Gemini (answers only about air quality)
+```
+
+- **Inputs:** a country (India by default) plus city, ZIP or PIN code, or the device location;
+  children, adults over 65 and health sensitivities; commute mode; home type; cooking and heating
+  fuel.
+- **Grounding:** the live AQI and PM2.5 are injected into the prompt, so advice reflects today's air
+  and not generic tips.
+- **Structured output:** Gemini must return JSON that matches a strict schema. Anything else is
+  rejected and the next model is tried.
+- **All third-party calls happen on the server.** The browser only talks to its own origin, and the
+  Gemini key never leaves the server.
+
+## Key features
+
+### Personalised advice
+
+- Plan tailored to location, live AQI, household members, health sensitivities, commute, home
+  type and fuels.
+- Country dropdown (India by default) so a bare PIN or ZIP code such as `600001` resolves to the
+  right city.
+- Every suggestion carries a quantified **Your impact** line (the schema rejects impacts without a
+  number).
+
+### Always-on Gemini
+
+- Gemini is the only AI used. The server tries five Gemini models in order and switches when one is
+  exhausted (429), overloaded (503), retired (404), slow or returns an unusable reply.
+- If a model has not answered after 4 seconds, the next one starts in parallel and the first valid
+  reply wins. Overloaded models get one quick retry.
+- If every model fails, the plan falls back to built-in guidance and the chat answers from built-in
+  answers. Both are deterministic, clearly labelled and never leave the user with an error screen.
+
+### Floating chat assistant
+
+- Bottom-right launcher, suggested questions and a conversation that knows the current city and AQI.
+- Stays on topic (air quality only) and refuses attempts to change its rules.
+- Keyboard and screen-reader friendly: dialog and log roles, Escape closes, focus returns.
+
+### Security and privacy
+
+- Validated and sanitised input, prompt-injection defences, rate limiting, nonce-based Content
+  Security Policy and security headers.
+- Nothing is stored: no database, no cookies, no logging of inputs. Device coordinates are rounded
+  to about 1 km.
+
+### Accessible and fast
+
+- WCAG 2.2 AA: landmarks, skip link, labelled controls, visible focus, colour never the only signal
+  (AQI is shown as number, words and a shape), reduced-motion support, responsive from 320 px.
+- Server-rendered page, lazy-loaded results and chat, cached air data and cached AI answers.
+
+## Technology stack
+
+| Area       | Choice                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------- |
+| Framework  | Next.js 16 (App Router, Turbopack), React 19                                                |
+| Language   | TypeScript 5.9 in strict mode with `noUncheckedIndexedAccess`                               |
+| GenAI      | Google Gemini through the official `@google/genai` SDK, server-side only                    |
+| Data       | Open-Meteo (geocoding and air quality, keyless), OpenStreetMap Nominatim (non-US postcodes) |
+| Validation | Zod 4 for requests, Gemini output and upstream responses                                    |
+| Styling    | Hand-written CSS with design tokens, no UI framework and no web fonts                       |
+| Quality    | ESLint (Next + TypeScript rules), Prettier                                                  |
+| Testing    | Vitest, React Testing Library, axe-core, Playwright, v8 coverage                            |
+| CI and CD  | GitHub Actions (lint, format, types, tests, audit, e2e); deployment target is Vercel        |
+
+## Folder structure
+
+```
+.
+├── src/
+│   ├── app/
+│   │   ├── page.tsx               Server component: header, hero, dashboard, footer
+│   │   ├── layout.tsx             Root layout and metadata
+│   │   ├── globals.css            Design tokens and all styles
+│   │   └── api/
+│   │       ├── advice/route.ts    POST: rate limit → validate → advice service → JSON
+│   │       └── chat/route.ts      POST: chat assistant with its own schema and limit
+│   ├── components/
+│   │   ├── AdvisorForm.tsx        Household form, states, focus management
+│   │   ├── Results.tsx            Snapshot and plan sections (lazy-loaded)
+│   │   ├── ChatWidget.tsx         Floating chat (lazy-loaded)
+│   │   └── AqiBadge.tsx, Fields.tsx
+│   ├── lib/
+│   │   ├── advice-service.ts      Orchestration: locate → air data → Gemini → fallback
+│   │   ├── gemini.ts              Gemini calls, model failover, parallel start, retry
+│   │   ├── prompt.ts              System instructions kept apart from user data
+│   │   ├── schemas.ts, options.ts Zod schemas and the single source of form options
+│   │   ├── aqi.ts                 Geocoding and air quality clients
+│   │   ├── fallback.ts            Built-in plan when Gemini is unavailable
+│   │   ├── chat-fallback.ts       Built-in chat answers when Gemini is unavailable
+│   │   └── http.ts, rate-limit.ts, cache.ts, sanitize.ts, csp.ts, errors.ts
+│   └── proxy.ts                   Per-request nonce Content Security Policy
+├── tests/                         Unit, component, API-route and accessibility tests
+├── e2e/happy-path.spec.ts         Playwright end-to-end tests
+├── docs/                          README screenshots
+├── .github/workflows/ci.yml       CI pipeline
+├── .env.example                   Environment variable template (no secrets)
+└── next.config.ts                 Security headers
+```
+
+## Getting started
 
 ```bash
 npm install
@@ -23,151 +145,68 @@ cp .env.example .env.local   # then set GEMINI_API_KEY
 npm run dev                  # http://localhost:3000
 ```
 
-| Variable         | Required | Purpose                                                      |
-| ---------------- | -------- | ------------------------------------------------------------ |
-| `GEMINI_API_KEY` | yes      | Server-side Gemini key. Never exposed to the browser.        |
-| `GEMINI_MODELS`  | no       | Comma-separated Gemini models tried in order (see failover). |
+| Variable         | Required | Purpose                                                           |
+| ---------------- | -------- | ----------------------------------------------------------------- |
+| `GEMINI_API_KEY` | yes      | Server-side Gemini key. Never exposed to the browser.             |
+| `GEMINI_MODELS`  | no       | Comma-separated Gemini models, tried in order (defaults built in) |
 
-Scripts: `npm run lint`, `format:check`, `typecheck`, `test:coverage`, `e2e`, `audit:deps`,
-`verify` (lint + format + types + coverage).
+Scripts: `npm run lint`, `format:check`, `typecheck`, `test:coverage`, `e2e`, `audit:deps` and
+`verify` (lint, format, types and coverage together).
 
-## Deploy to Vercel
+**Deploy to Vercel:** import the repository (framework preset Next.js), add `GEMINI_API_KEY` under
+Project → Settings → Environment Variables and deploy. No other configuration is needed. Use a key
+from a Google AI project with billing enabled for production-level quotas; free-tier keys have low
+limits and can be exhausted.
 
-Import the repo in Vercel (framework preset: Next.js), add `GEMINI_API_KEY` (and optionally
-`GEMINI_MODEL`) under Project → Settings → Environment Variables, and deploy. No other config is
-needed; the route declares `maxDuration = 40`.
+## Evaluation criteria
 
-## Architecture
+| Criterion                 | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Code quality**          | Layered modules (route → service → clients) with one responsibility per file; form options defined once in `src/lib/options.ts` and reused by validation; strict TypeScript; ESLint with `--max-warnings=0` and Prettier; JSDoc on exported functions; no dead code.                                                                                                                                                                                  |
+| **Security**              | Key read only in `src/lib/gemini.ts`; `.env*` git-ignored, only `.env.example` committed; Zod validation with closed enums, strict objects, a pattern-checked location and a country allow-list; body size and content-type checks; per-IP rate limits (10 plans and 20 chats a minute); instructions kept apart from user data; nonce CSP and security headers (`src/proxy.ts`, `next.config.ts`); `npm audit --omit=dev` reports 0 vulnerabilities. |
+| **Efficiency**            | Server-rendered page; results view and chat lazy-loaded; no web fonts; air data cached for 15 minutes; Gemini answers cached for 15 minutes per household, place and pollution band; upstream timeouts; model cool-downs so failed models are not retried needlessly; plans take about 3 to 5 seconds.                                                                                                                                                |
+| **Testing**               | 202 unit, component and API tests plus 6 Playwright tests; coverage gate of at least 90% enforced in `vitest.config.ts`; external services mocked; CI runs lint, format, types, tests, audit and e2e.                                                                                                                                                                                                                                                 |
+| **Accessibility**         | Semantic landmarks and headings, skip link, labelled controls, full keyboard use, focus moved to results after submit, `aria-live` results, `role="alert"` errors, contrast of every colour pair tested (`tests/contrast.test.ts`), axe-core tests on every state, Lighthouse Accessibility 100.                                                                                                                                                      |
+| **Problem statement fit** | Low-emission routines, indoor air hacks and sustainable alternatives, tailored to location and lifestyle, each with a quantified "Your impact" line; live air data grounds every plan; the chat assistant answers follow-up questions.                                                                                                                                                                                                                |
 
-```
-src/
-  app/
-    page.tsx              Server component: shell, disclaimer, credits
-    layout.tsx            Root layout
-    api/advice/route.ts   POST handler: rate limit → validate → service → JSON
-    api/chat/route.ts     POST handler for the chat assistant (own, stricter schema and limit)
-  components/
-    AdvisorForm.tsx       Client form, states (idle/loading/error/success), focus management
-    Results.tsx           Lazy-loaded results view (next/dynamic)
-    ChatWidget.tsx        Floating chat (lazy-loaded), keyboard and screen-reader friendly
-    AqiBadge.tsx, Fields.tsx
-  lib/
-    schemas.ts            Zod: request profile and Gemini output
-    options.ts            Single source for every select/checkbox option
-    aqi.ts                Open-Meteo geocoding + air quality; OpenStreetMap Nominatim for non-US postcodes
-    gemini.ts, prompt.ts  Gemini call: system instruction separate from user data
-    fallback.ts           Deterministic plan when Gemini is unavailable
-    advice-service.ts     Orchestration, AI-response cache, graceful degradation
-    http.ts               Shared route helpers: body reading, rate limiting, error shape
-    rate-limit.ts, cache.ts, sanitize.ts, csp.ts, errors.ts
-  proxy.ts                Per-request nonce CSP
-```
+**Known gaps (honest self-assessment):**
 
-Request flow: browser → `POST /api/advice` → input validated with Zod → geocode (if text) →
-live AQI → Gemini (`responseMimeType: application/json` + JSON schema, output re-validated with
-Zod) → response. The browser only ever talks to its own origin; all third-party calls are
-server-side.
+- Mobile Lighthouse Performance varies between 90 and 96 on throttled runs because React hydration
+  time depends on CPU load; every other Lighthouse score is 100.
+- The rate limiter and AI cache are in memory, so they are per serverless instance.
+- Impact figures are model estimates and are labelled as such in the UI.
 
-## Gemini model failover
+## Testing results
 
-Gemini is the only AI used. `src/lib/gemini.ts` tries `gemini-flash-lite-latest`,
-`gemini-3.1-flash-lite`, `gemini-3.5-flash-lite`, then `gemini-2.5-flash` (override with
-`GEMINI_MODELS`). If a model returns 429/503/404, takes over 8 s, or gives an unusable reply, the
-next one is tried within a 20 s budget; if a model has not answered after 4 s, the next one starts in parallel and the first valid reply wins. The failed model is skipped for 60 s (5 min when its quota
-is exhausted) so later requests do not wait on it again. The order comes from probing each model
-with the project key: the lite models returned a full plan in about 3 s and have separate quotas,
-while `gemini-3-flash-preview` took 16 s and `gemini-flash-latest` hung, so they are left out.
+Measured on the production build in November 2026.
 
-If every model fails, nothing goes dark: the plan falls back to `fallback.ts` and the chat to
-`chat-fallback.ts`. Both are deterministic built-in guidance (not AI), and the UI says so.
+| Check                             | Result                                                                                                              |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Unit, component and API tests     | **202 passed** in 16 files, 0 failed                                                                                |
+| End-to-end (Playwright, Chromium) | **6 passed**: keyboard happy path, error alert, CSP and headers, chat, API validation                               |
+| Coverage                          | Statements **99.76%**, branches **97.15%**, functions **100%**, lines **100%**                                      |
+| Lint, format, types               | ESLint with zero warnings, Prettier clean, `tsc --noEmit` clean                                                     |
+| Dependency audit (production)     | `npm audit --omit=dev`: **0 vulnerabilities**                                                                       |
+| Lighthouse, desktop               | Performance **100**, Accessibility **100**, Best Practices **100**, SEO **100**                                     |
+| Lighthouse, mobile (throttled)    | Performance **90 to 96** across runs, Accessibility **100**, Best Practices **100**, SEO **100** (LCP 0.8 s, CLS 0) |
+| Live Gemini check                 | 8 of 8 plans written by Gemini in 2.8 to 4.6 s; chat in about 2 s; injection attempt refused                        |
 
-## Failure handling
+What the tests cover: input validation and injection attempts, rate limiting, error responses that
+never leak internals, Gemini failover (429, 503, 404, timeouts, bad JSON, parallel start, retry and
+cool-downs), the built-in fallbacks, the chat widget, colour contrast, axe-core accessibility on the
+empty, success and error states, and the security headers.
 
-| Failure                                                                                     | Behaviour                                                                                                             |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| One Gemini model exhausted (429), overloaded (503), retired (404), slow or returns bad JSON | Next Gemini model in `GEMINI_MODELS` is used; the failed one is skipped for 20 s, and overloaded models get one retry |
-| Every Gemini model fails                                                                    | Rule-based plan (`fallback.ts`) with a visible notice; chat answers from `chat-fallback.ts`, labelled as such         |
-| Air-quality API down                                                                        | Plan still produced (precautionary), snapshot shows "unavailable", notice shown                                       |
-| Place not found / geocoder down                                                             | Clear 404 / 502 message, form stays editable                                                                          |
-| Rate limited                                                                                | 429 with `Retry-After`                                                                                                |
-| Network failure in the browser                                                              | Announced error message                                                                                               |
+Run them yourself: `npm run verify` for lint, format, types and coverage, and `npm run e2e` for the
+browser tests.
 
-## Evidence for each criterion
+## Future improvements
 
-### 1. Code quality
-
-- Modular layers (route → service → clients), one responsibility per file; option lists defined once
-  (`src/lib/options.ts`) and reused by form and validation; no duplicated schemas.
-- TypeScript `strict` plus `noUncheckedIndexedAccess` (`tsconfig.json`); ESLint (`next/core-web-vitals`,
-  `next/typescript`, `eslint-config-prettier`) run with `--max-warnings=0` (`eslint.config.mjs`);
-  Prettier (`.prettierrc.json`).
-- JSDoc on every exported function and component; `npm run build` emits no warnings.
-
-### 2. Security
-
-- Key is read from `process.env.GEMINI_API_KEY` only in `src/lib/gemini.ts` (server). Only
-  `.env.example` is committed; `.env*` is git-ignored. Tests assert errors never leak the key
-  (`tests/api/route.test.ts`).
-- Zod validation of all input (`src/lib/schemas.ts`): closed enums, strict objects, a pattern-checked
-  location string, 2 KB body cap, content-type check. Upstream API responses are validated too.
-- Rate limits per IP: 10 requests/minute for plans, 20 for chat (`src/lib/rate-limit.ts`, applied in
-  each route through `src/lib/http.ts`).
-- Chat injection defence: rules in `systemInstruction`, user words only in the conversation turns,
-  strict schema (role, length, no extra keys), plain-text replies rendered as text, never as HTML.
-- Prompt-injection defence: instructions live in `systemInstruction` (`src/lib/prompt.ts`); user data
-  goes in a delimited JSON block; free text is restricted to a safe character set and geocoder names
-  are sanitised (`src/lib/sanitize.ts`); Gemini output must match a strict schema with no extra keys.
-- Headers: `next.config.ts` (HSTS, nosniff, frame deny, referrer, permissions policy, COOP) and a
-  nonce-based CSP with `strict-dynamic`, `connect-src 'self'`, `frame-ancestors 'none'`
-  (`src/proxy.ts`, `src/lib/csp.ts`; verified in `e2e/happy-path.spec.ts`).
-- No personal data is stored: no database, no cookies, no logging of inputs; device coordinates are
-  rounded to ~1 km and kept in component state only.
-- `npm audit --omit=dev` reports **0 vulnerabilities** (run in CI). A _dev-only_ advisory in
-  `picomatch` (ReDoS, via vite/eslint tooling) currently has no patched release; it does not ship
-  to production.
-
-### 3. Efficiency
-
-- Server component page; only the form is a client component; results view is lazy-loaded with
-  `next/dynamic`; no web fonts, no client-side libraries beyond React (no Zod in the browser).
-- AQI and geocoding use `fetch` revalidation (15 min); Gemini answers are cached 15 minutes per
-  household/place/pollution band (`src/lib/advice-service.ts`, `src/lib/cache.ts`).
-- Timeouts: 5 s for Open-Meteo, 20 s for Gemini (`AbortSignal.timeout`).
-- Lighthouse (production build, mobile and desktop): **Performance 100, Accessibility 100, Best
-  Practices 100, SEO 100** (LCP 0.8 s mobile, CLS 0).
-
-### 4. Testing
-
-- Vitest + React Testing Library: unit, component and API-route tests with Gemini and `fetch` mocked
-  (`tests/`). Coverage gate ≥ 90% enforced in `vitest.config.ts`; current: 100% statements/lines/
-  functions, ~98.6% branches (164 tests).
-- Playwright happy path, error path, keyboard flow and header/CSP checks against the production
-  build (`e2e/happy-path.spec.ts`).
-- GitHub Actions (`.github/workflows/ci.yml`): lint, format, typecheck, coverage tests, audit, e2e.
-
-### 5. Accessibility (WCAG 2.2 AA)
-
-- Semantic landmarks and headings, skip link, every control labelled, native fieldsets/legends.
-- Full keyboard use; visible `:focus-visible` outline; 44 px targets; focus moves to the results
-  region after submit; results in an `aria-live` region, errors in `role="alert"`.
-- AQI level is always number + words + shape glyph, never colour alone (`src/components/AqiBadge.tsx`).
-- Contrast: every colour pair in `src/app/globals.css` is tested for ≥ 4.5:1 and borders for ≥ 3:1
-  (`tests/contrast.test.ts`); `prefers-reduced-motion` stops the spinner; responsive single-column
-  layout from 320 px.
-- Automated axe-core tests on the empty, success and error states (`tests/components/a11y.test.tsx`)
-  and Lighthouse Accessibility 100.
-
-### 6. Problem statement alignment
-
-- Inputs: city/ZIP or geolocation, children/elderly/health sensitivities, commute, home type,
-  cooking and heating fuel (`src/components/AdvisorForm.tsx`).
-- Live AQI/PM2.5 from keyless Open-Meteo is injected into the prompt.
-- All four required sections, each suggestion with a quantified **"Your impact"** (the schema rejects
-  impacts without a number); tailored to location and lifestyle by both Gemini and the fallback.
-- Open-Meteo credit in the footer; impact figures are labelled as estimates.
-
-## Known limits
-
-- The rate limiter and AI cache are in-memory, so they are per warm serverless instance. Swap in
-  Upstash/Vercel KV for global limits (noted in `src/lib/rate-limit.ts`).
-- Impact figures are model estimates, labelled as such in the UI.
+- Shared rate limiting and caching (Upstash or Vercel KV) so limits and cached answers hold across
+  all serverless instances.
+- Streaming plan output so the first suggestions appear while the rest is still being written.
+- Multilingual interface and answers (Hindi and other regional languages).
+- Air-quality forecasts and alerts, so families can plan the next days and not only today.
+- Optional saved households (with consent) and a simple history of past readings.
+- Neighbourhood-level data from local monitoring stations where available.
+- Voice input and read-aloud for the chat assistant.
+- A larger country list and a map-based location picker.

@@ -46,7 +46,7 @@ describe("generateAdvice", () => {
       httpOptions: { apiVersion: "v1beta" },
     });
     const request = generateContent.mock.calls[0]?.[0];
-    expect(request.model).toBe("gemini-flash-lite-latest");
+    expect(request.model).toBe("gemini-3.1-flash-lite");
     expect(request.config.responseMimeType).toBe("application/json");
     expect(request.config.responseJsonSchema).not.toHaveProperty("$schema");
     expect(request.config.abortSignal).toBeInstanceOf(AbortSignal);
@@ -93,7 +93,7 @@ describe("model failover", () => {
   it("switches to the next model when one is overloaded or exhausted", async () => {
     generateContent.mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(planReply);
     await expect(gemini.generateAdvice(profile, "Delhi", snapshot)).resolves.toEqual(advice);
-    expect(modelsCalled()).toEqual(["gemini-flash-lite-latest", "gemini-3.1-flash-lite"]);
+    expect(modelsCalled()).toEqual(["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]);
     // Only the 2.5 family accepts "thinking off"; sending it elsewhere would be a 400.
     expect(generateContent.mock.calls[1]?.[0].config).not.toHaveProperty("thinkingConfig");
   });
@@ -127,14 +127,14 @@ describe("model failover", () => {
     await gemini.generateAdvice(profile, "Delhi", snapshot);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
     expect(modelsCalled()).toEqual([
-      "gemini-flash-lite-latest",
       "gemini-3.1-flash-lite",
-      "gemini-3.1-flash-lite",
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash-lite",
     ]);
 
     vi.setSystemTime(61_000);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
-    expect(modelsCalled().at(-1)).toBe("gemini-flash-lite-latest");
+    expect(modelsCalled().at(-1)).toBe("gemini-3.1-flash-lite");
   });
 
   it("starts the next model when one is slow, and cancels the loser without penalising it", async () => {
@@ -155,13 +155,13 @@ describe("model failover", () => {
     await vi.advanceTimersByTimeAsync(4_000);
     await expect(pending).resolves.toEqual(advice);
 
-    expect(modelsCalled()).toEqual(["gemini-flash-lite-latest", "gemini-3.1-flash-lite"]);
+    expect(modelsCalled()).toEqual(["gemini-3.1-flash-lite", "gemini-3.5-flash-lite"]);
     expect(slowSignal?.aborted).toBe(true);
     expect(log).not.toHaveBeenCalled();
 
     // The cancelled model was not put on cool-down, so the next request tries it first again.
     await gemini.generateAdvice(profile, "Delhi", snapshot);
-    expect(modelsCalled().at(-1)).toBe("gemini-flash-lite-latest");
+    expect(modelsCalled().at(-1)).toBe("gemini-3.1-flash-lite");
   });
 
   it("does not start another model once one has answered", async () => {
@@ -195,7 +195,7 @@ describe("model failover", () => {
   });
 
   it("turns thinking off for 2.5 Flash only, since other models reject the setting", async () => {
-    vi.stubEnv("GEMINI_MODELS", "gemini-2.5-flash,gemini-3.1-flash-lite");
+    vi.stubEnv("GEMINI_MODELS", "gemini-2.5-flash,gemini-3.5-flash-lite");
     generateContent.mockRejectedValueOnce(apiError(503)).mockResolvedValueOnce(planReply);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
     expect(generateContent.mock.calls[0]?.[0].config.thinkingConfig).toEqual({ thinkingBudget: 0 });
@@ -211,14 +211,14 @@ describe("model failover", () => {
     vi.setSystemTime(4 * 60_000);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
     expect(modelsCalled()).toEqual([
-      "gemini-flash-lite-latest",
       "gemini-3.1-flash-lite",
-      "gemini-3.1-flash-lite",
+      "gemini-3.5-flash-lite",
+      "gemini-3.5-flash-lite",
     ]);
 
     vi.setSystemTime(6 * 60_000);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
-    expect(modelsCalled().at(-1)).toBe("gemini-flash-lite-latest");
+    expect(modelsCalled().at(-1)).toBe("gemini-3.1-flash-lite");
   });
 
   it("tries every model again when all are cooling down", async () => {
@@ -227,7 +227,7 @@ describe("model failover", () => {
 
     generateContent.mockReset().mockResolvedValue(planReply);
     await expect(gemini.generateAdvice(profile, "Delhi", snapshot)).resolves.toEqual(advice);
-    expect(modelsCalled()).toEqual(["gemini-flash-lite-latest"]);
+    expect(modelsCalled()).toEqual(["gemini-3.1-flash-lite"]);
   });
 
   it("stops when the total time budget is spent", async () => {
@@ -256,7 +256,7 @@ describe("model failover", () => {
       .mockResolvedValueOnce(planReply);
     await gemini.generateAdvice(profile, "Delhi", snapshot);
     const logged = log.mock.calls.flat().join(" ");
-    expect(logged).toContain("gemini-flash-lite-latest failed (Error 429)");
+    expect(logged).toContain("gemini-3.1-flash-lite failed (Error 429)");
     expect(logged).toContain("failed (UnknownError)");
     expect(logged).not.toContain("secret detail");
   });
@@ -278,7 +278,7 @@ describe("generateChatReply", () => {
     await expect(gemini.generateChatReply(request)).resolves.toBe("Wear a fitted N95.");
 
     const call = generateContent.mock.calls[0]?.[0];
-    expect(call.model).toBe("gemini-flash-lite-latest");
+    expect(call.model).toBe("gemini-3.1-flash-lite");
     expect(call.contents).toEqual([
       { role: "user", parts: [{ text: "Which mask?" }] },
       { role: "model", parts: [{ text: "An N95." }] },
