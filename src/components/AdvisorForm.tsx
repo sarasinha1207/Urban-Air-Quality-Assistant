@@ -192,7 +192,7 @@ export default function AdvisorForm() {
         <h2 id="results-heading">Your clean-air plan</h2>
         <div aria-live="polite" aria-busy={loading}>
           {state.status === "idle" && (
-            <p className="muted">
+            <p className="muted empty">
               Fill in the form and your personalised plan will appear here, with the impact of each
               choice.
             </p>

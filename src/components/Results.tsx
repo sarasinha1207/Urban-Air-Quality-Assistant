@@ -6,11 +6,13 @@ interface SuggestionSectionProps {
   id: string;
   title: string;
   items: Suggestion[];
+  /** Colour theme for the section, defined in globals.css. */
+  tone: "routine" | "indoor" | "alt";
 }
 
-function SuggestionSection({ id, title, items }: SuggestionSectionProps) {
+function SuggestionSection({ id, title, items, tone }: SuggestionSectionProps) {
   return (
-    <section aria-labelledby={id} className="card">
+    <section aria-labelledby={id} className={`card tone-${tone}`}>
       <h3 id={id}>{title}</h3>
       <ul className="suggestions">
         {items.map((item, index) => (
@@ -78,12 +80,19 @@ export default function Results({ data }: { data: AdviceResponse }) {
         id="routine-heading"
         title="Low-Emission Daily Routine"
         items={advice.routine}
+        tone="routine"
       />
-      <SuggestionSection id="indoor-heading" title="Indoor Air Hacks" items={advice.indoorHacks} />
+      <SuggestionSection
+        id="indoor-heading"
+        title="Indoor Air Hacks"
+        items={advice.indoorHacks}
+        tone="indoor"
+      />
       <SuggestionSection
         id="alternatives-heading"
         title="Sustainable Alternatives"
         items={advice.alternatives}
+        tone="alt"
       />
 
       <p className="muted">

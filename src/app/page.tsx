@@ -10,12 +10,21 @@ export default function Home() {
       <a className="skip-link" href="#main">
         Skip to main content
       </a>
-      <header className="site-header">
-        <h1>Urban Air Quality Assistant</h1>
-        <p>
-          Get a low-emission daily routine, indoor air hacks and sustainable swaps for winter smog,
-          tailored to where you live and how your family lives.
-        </p>
+      <header className="hero">
+        <div className="hero-inner">
+          <p className="eyebrow">Winter smog toolkit</p>
+          <h1>Urban Air Quality Assistant</h1>
+          <p>
+            Get a low-emission daily routine, indoor air hacks and sustainable swaps for winter
+            smog, tailored to where you live and how your family lives.
+          </p>
+          <ul className="chips">
+            <li>Live AQI data</li>
+            <li>AI-personalised plan</li>
+            <li>Impact of every choice</li>
+            <li>Nothing stored</li>
+          </ul>
+        </div>
       </header>
       <main id="main">
         <p className="notice" role="note">

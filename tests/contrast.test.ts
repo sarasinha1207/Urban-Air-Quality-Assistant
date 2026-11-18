@@ -23,7 +23,8 @@ function ratio(a: string, b: string): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
-const pairs = [...css.matchAll(/--([a-z0-9-]+)-bg:/g)].map((m) => m[1] as string);
+// Only tokens holding a literal colour; `--tone-*` are aliases of pairs that are tested themselves.
+const pairs = [...css.matchAll(/--([a-z0-9-]+)-bg:\s*#/g)].map((m) => m[1] as string);
 
 describe("WCAG colour contrast of design tokens", () => {
   it("finds every text pair", () => {
