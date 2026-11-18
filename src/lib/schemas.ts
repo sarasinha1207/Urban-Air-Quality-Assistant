@@ -59,7 +59,36 @@ export const adviceSchema = z.strictObject({
   alternatives: suggestionList,
 });
 
+/** A chat request: the recent conversation plus the reading currently shown on the dashboard. */
+export const chatSchema = z
+  .strictObject({
+    messages: z
+      .array(
+        z.strictObject({
+          role: z.enum(["user", "assistant"]),
+          content: z
+            .string()
+            .trim()
+            .min(1, "Type a question first.")
+            .max(500, "Keep questions under 500 characters."),
+        }),
+      )
+      .min(1)
+      .max(8),
+    context: z
+      .strictObject({
+        placeName: z.string().trim().max(80).regex(LOCATION_PATTERN),
+        usAqi: z.number().min(0).max(500),
+      })
+      .optional(),
+  })
+  .refine(
+    ({ messages }) => messages[0]?.role === "user" && messages.at(-1)?.role === "user",
+    "The conversation must start and end with a user message.",
+  );
+
 export type Profile = z.infer<typeof profileSchema>;
+export type ChatRequest = z.infer<typeof chatSchema>;
 
 /**
  * The lifestyle part of a profile (everything except the location), used in prompts and cache keys.

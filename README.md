@@ -8,9 +8,12 @@ ZIP code (or use device location), describe your household and lifestyle, and ge
 3. **Indoor Air Hacks**
 4. **Sustainable Alternatives**
 
+A floating **chat assistant** (bottom-right) answers follow-up questions about masks, purifiers,
+cooking smoke and more, and can see the reading currently on screen.
+
 Every suggestion carries a **"Your impact"** line that quantifies the effect of that choice.
 The plan is written by Google Gemini. If Gemini or the air-quality API fails, the app degrades
-gracefully (see [Failure handling](#failure-handling)). _Not medical advice._
+gracefully (see [Failure handling](#failure-handling)).
 
 ## Quick start
 
@@ -42,9 +45,11 @@ src/
     page.tsx              Server component: shell, disclaimer, credits
     layout.tsx            Root layout
     api/advice/route.ts   POST handler: rate limit → validate → service → JSON
+    api/chat/route.ts     POST handler for the chat assistant (own, stricter schema and limit)
   components/
     AdvisorForm.tsx       Client form, states (idle/loading/error/success), focus management
     Results.tsx           Lazy-loaded results view (next/dynamic)
+    ChatWidget.tsx        Floating chat (lazy-loaded), keyboard and screen-reader friendly
     AqiBadge.tsx, Fields.tsx
   lib/
     schemas.ts            Zod: request profile and Gemini output
@@ -53,6 +58,7 @@ src/
     gemini.ts, prompt.ts  Gemini call: system instruction separate from user data
     fallback.ts           Deterministic plan when Gemini is unavailable
     advice-service.ts     Orchestration, AI-response cache, graceful degradation
+    http.ts               Shared route helpers: body reading, rate limiting, error shape
     rate-limit.ts, cache.ts, sanitize.ts, csp.ts, errors.ts
   proxy.ts                Per-request nonce CSP
 ```
@@ -90,7 +96,10 @@ server-side.
   (`tests/api/route.test.ts`).
 - Zod validation of all input (`src/lib/schemas.ts`): closed enums, strict objects, a pattern-checked
   location string, 2 KB body cap, content-type check. Upstream API responses are validated too.
-- Rate limit: 10 requests/minute/IP (`src/lib/rate-limit.ts`, applied in the route).
+- Rate limits per IP: 10 requests/minute for plans, 20 for chat (`src/lib/rate-limit.ts`, applied in
+  each route through `src/lib/http.ts`).
+- Chat injection defence: rules in `systemInstruction`, user words only in the conversation turns,
+  strict schema (role, length, no extra keys), plain-text replies rendered as text, never as HTML.
 - Prompt-injection defence: instructions live in `systemInstruction` (`src/lib/prompt.ts`); user data
   goes in a delimited JSON block; free text is restricted to a safe character set and geocoder names
   are sanitised (`src/lib/sanitize.ts`); Gemini output must match a strict schema with no extra keys.
@@ -117,7 +126,7 @@ server-side.
 
 - Vitest + React Testing Library: unit, component and API-route tests with Gemini and `fetch` mocked
   (`tests/`). Coverage gate ≥ 90% enforced in `vitest.config.ts`; current: 100% statements/lines/
-  functions, ~98.7% branches (122 tests).
+  functions, ~98.6% branches (164 tests).
 - Playwright happy path, error path, keyboard flow and header/CSP checks against the production
   build (`e2e/happy-path.spec.ts`).
 - GitHub Actions (`.github/workflows/ci.yml`): lint, format, typecheck, coverage tests, audit, e2e.
@@ -141,7 +150,7 @@ server-side.
 - Live AQI/PM2.5 from keyless Open-Meteo is injected into the prompt.
 - All four required sections, each suggestion with a quantified **"Your impact"** (the schema rejects
   impacts without a number); tailored to location and lifestyle by both Gemini and the fallback.
-- "Not medical advice" disclaimer on the page and in the results; Open-Meteo credit in the footer.
+- Open-Meteo credit in the footer; impact figures are labelled as estimates.
 
 ## Known limits
 

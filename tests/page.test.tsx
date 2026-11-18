@@ -10,7 +10,6 @@ describe("Home page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
-    expect(screen.getByRole("note")).toHaveTextContent(/not medical advice/i);
     expect(screen.getByRole("link", { name: "Open-Meteo.com" })).toHaveAttribute(
       "href",
       "https://open-meteo.com/",

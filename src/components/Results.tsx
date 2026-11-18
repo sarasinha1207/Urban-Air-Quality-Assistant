@@ -44,60 +44,64 @@ export default function Results({ data }: { data: AdviceResponse }) {
         </p>
       ))}
 
-      <section aria-labelledby="snapshot-heading" className="card">
+      <section aria-labelledby="snapshot-heading" className="card tone-snapshot">
         <h3 id="snapshot-heading">Today&rsquo;s Air Snapshot</h3>
         <p className="place">{placeName}</p>
         {snapshot ? (
-          <>
+          <div className="snapshot-grid">
             <AqiBadge aqi={snapshot.usAqi} category={snapshot.category} />
-            <dl className="readings">
-              <div>
-                <dt>PM2.5</dt>
-                <dd>{snapshot.pm25} µg/m³</dd>
-              </div>
-              {snapshot.pm10 !== null && (
+            <div>
+              <dl className="readings">
                 <div>
-                  <dt>PM10</dt>
-                  <dd>{snapshot.pm10} µg/m³</dd>
+                  <dt>PM2.5</dt>
+                  <dd>{snapshot.pm25} µg/m³</dd>
                 </div>
-              )}
-              <div>
-                <dt>Versus WHO daily guideline</dt>
-                <dd>{snapshot.whoMultiple}× the limit</dd>
-              </div>
-            </dl>
-            <p className="muted">
-              Reading from {snapshot.observedAt.replace("T", " ")} (local time)
-            </p>
-          </>
+                {snapshot.pm10 !== null && (
+                  <div>
+                    <dt>PM10</dt>
+                    <dd>{snapshot.pm10} µg/m³</dd>
+                  </div>
+                )}
+                <div>
+                  <dt>Versus WHO daily guideline</dt>
+                  <dd>{snapshot.whoMultiple}× the limit</dd>
+                </div>
+              </dl>
+              <p className="muted">
+                Reading from {snapshot.observedAt.replace("T", " ")} (local time)
+              </p>
+            </div>
+          </div>
         ) : (
           <p>Live readings are unavailable right now.</p>
         )}
-        <p>{advice.snapshotSummary}</p>
+        <p className="summary">{advice.snapshotSummary}</p>
       </section>
 
-      <SuggestionSection
-        id="routine-heading"
-        title="Low-Emission Daily Routine"
-        items={advice.routine}
-        tone="routine"
-      />
-      <SuggestionSection
-        id="indoor-heading"
-        title="Indoor Air Hacks"
-        items={advice.indoorHacks}
-        tone="indoor"
-      />
-      <SuggestionSection
-        id="alternatives-heading"
-        title="Sustainable Alternatives"
-        items={advice.alternatives}
-        tone="alt"
-      />
+      <div className="sections">
+        <SuggestionSection
+          id="routine-heading"
+          title="Low-Emission Daily Routine"
+          items={advice.routine}
+          tone="routine"
+        />
+        <SuggestionSection
+          id="indoor-heading"
+          title="Indoor Air Hacks"
+          items={advice.indoorHacks}
+          tone="indoor"
+        />
+        <SuggestionSection
+          id="alternatives-heading"
+          title="Sustainable Alternatives"
+          items={advice.alternatives}
+          tone="alt"
+        />
+      </div>
 
       <p className="muted">
         {source === "ai" ? "Plan written by Gemini AI." : "Plan from built-in smog guidance."}{" "}
-        Impact figures are rough estimates. This is not medical advice.
+        Impact figures are rough estimates.
       </p>
     </div>
   );

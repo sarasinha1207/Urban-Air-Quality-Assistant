@@ -92,6 +92,36 @@ test("the page ships a nonce-based CSP and security headers", async ({ page }) =
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 
+test("the floating assistant answers a question and closes with Escape", async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.route("**/api/chat", (route) =>
+    route.fulfill({ json: { reply: "Wear a fitted N95 outdoors." } }),
+  );
+  await page.goto("/");
+
+  const launcher = page.getByRole("button", { name: "Ask the assistant" });
+  await launcher.click();
+  const dialog = page.getByRole("dialog", { name: "Air quality assistant chat" });
+  await expect(dialog).toBeVisible();
+  await expect(page.getByLabel("Your question")).toBeFocused();
+
+  await page.getByLabel("Your question").fill("Which mask should I wear?");
+  await page.getByLabel("Your question").press("Enter");
+  await expect(dialog.getByText("Wear a fitted N95 outdoors.")).toBeVisible();
+
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(launcher).toBeFocused();
+  expect(errors).toEqual([]);
+});
+
+test("the chat API rejects invalid input", async ({ request }) => {
+  const response = await request.post("/api/chat", {
+    data: { messages: [{ role: "assistant", content: "Hi" }] },
+  });
+  expect(response.status()).toBe(400);
+});
+
 test("the API rejects invalid input without calling any upstream", async ({ request }) => {
   const response = await request.post("/api/advice", { data: { location: "Delhi" } });
   expect(response.status()).toBe(400);

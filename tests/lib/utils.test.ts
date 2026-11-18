@@ -68,7 +68,8 @@ describe("buildCsp", () => {
   it("allows what Next dev tooling needs in development", () => {
     const csp = buildCsp("abc", true);
     expect(csp).toContain("'unsafe-eval'");
-    expect(csp).toContain("'unsafe-inline'");
+    // A nonce would make browsers ignore 'unsafe-inline', so dev styles carry no nonce.
+    expect(csp).toContain("style-src 'self' 'unsafe-inline';");
     expect(csp).not.toContain("upgrade-insecure-requests");
   });
 });

@@ -25,7 +25,7 @@ describe("Results", () => {
       expect(within(section).getAllByText(/your impact:/i)).toHaveLength(3);
     }
     expect(screen.getByText(/plan written by gemini ai/i)).toBeInTheDocument();
-    expect(screen.getByText(/not medical advice/i)).toBeInTheDocument();
+    expect(screen.getByText(/rough estimates/i)).toBeInTheDocument();
   });
 
   it("handles missing live data, notices, missing PM10 and the fallback source", () => {
