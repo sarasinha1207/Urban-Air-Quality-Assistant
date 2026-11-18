@@ -36,7 +36,7 @@ describe("POST /api/chat", () => {
     const response = await post(valid);
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(await response.json()).toEqual({ reply: "Wear an N95." });
+    expect(await response.json()).toEqual({ reply: "Wear an N95.", source: "ai" });
     expect(generateChatReply).toHaveBeenCalledWith(valid);
   });
 
@@ -79,13 +79,14 @@ describe("POST /api/chat", () => {
     expect((await post(valid, { "content-type": "text/plain" })).status).toBe(415);
   });
 
-  it("hides internals when Gemini fails", async () => {
+  it("answers from built-in guidance when Gemini fails, without leaking internals", async () => {
     vi.stubEnv("GEMINI_API_KEY", "super-secret-key");
     generateChatReply.mockRejectedValue(new Error("quota super-secret-key"));
     const response = await post(valid);
     const text = await response.text();
-    expect(response.status).toBe(502);
-    expect(text).toContain("assistant_unavailable");
+    expect(response.status).toBe(200);
+    expect(JSON.parse(text)).toMatchObject({ source: "fallback" });
+    expect(text).toContain("N95");
     expect(text).not.toContain("super-secret-key");
     expect(text).not.toContain("quota");
     vi.unstubAllEnvs();
@@ -93,7 +94,7 @@ describe("POST /api/chat", () => {
 
   it("logs non-Error throwables safely", async () => {
     generateChatReply.mockRejectedValue("weird");
-    expect((await post(valid)).status).toBe(502);
+    expect(await (await post(valid)).json()).toMatchObject({ source: "fallback" });
   });
 
   it("rate-limits a client after 20 requests a minute", async () => {

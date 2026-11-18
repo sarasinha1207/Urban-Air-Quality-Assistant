@@ -70,23 +70,27 @@ server-side.
 
 ## Gemini model failover
 
-Gemini is the only AI used. `src/lib/gemini.ts` tries `gemini-2.5-flash`, `gemini-flash-latest`,
-`gemini-flash-lite-latest`, then `gemini-3.5-flash-lite` (override with `GEMINI_MODELS`). If a model
-returns 429/503/404, times out, or gives an unusable reply, the next one is tried within a 25 s
-budget, and the failed model is skipped for 60 s so later requests do not wait on it again. The
-default order was chosen by testing: in practice some alias and preview models returned 503 or 404
-while stable ones answered.
+Gemini is the only AI used. `src/lib/gemini.ts` tries `gemini-flash-lite-latest`,
+`gemini-3.1-flash-lite`, `gemini-3.5-flash-lite`, then `gemini-2.5-flash` (override with
+`GEMINI_MODELS`). If a model returns 429/503/404, takes over 8 s, or gives an unusable reply, the
+next one is tried within a 20 s budget; if a model has not answered after 4 s, the next one starts in parallel and the first valid reply wins. The failed model is skipped for 60 s (5 min when its quota
+is exhausted) so later requests do not wait on it again. The order comes from probing each model
+with the project key: the lite models returned a full plan in about 3 s and have separate quotas,
+while `gemini-3-flash-preview` took 16 s and `gemini-flash-latest` hung, so they are left out.
+
+If every model fails, nothing goes dark: the plan falls back to `fallback.ts` and the chat to
+`chat-fallback.ts`. Both are deterministic built-in guidance (not AI), and the UI says so.
 
 ## Failure handling
 
-| Failure                                                                                     | Behaviour                                                                                                       |
-| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| One Gemini model exhausted (429), overloaded (503), retired (404), slow or returns bad JSON | Next Gemini model in `GEMINI_MODELS` is used; the failed one is skipped for 60 s                                |
-| Every Gemini model fails                                                                    | Rule-based plan (`fallback.ts`) built from the same profile, with a visible notice; chat shows a friendly error |
-| Air-quality API down                                                                        | Plan still produced (precautionary), snapshot shows "unavailable", notice shown                                 |
-| Place not found / geocoder down                                                             | Clear 404 / 502 message, form stays editable                                                                    |
-| Rate limited                                                                                | 429 with `Retry-After`                                                                                          |
-| Network failure in the browser                                                              | Announced error message                                                                                         |
+| Failure                                                                                     | Behaviour                                                                                                             |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| One Gemini model exhausted (429), overloaded (503), retired (404), slow or returns bad JSON | Next Gemini model in `GEMINI_MODELS` is used; the failed one is skipped for 20 s, and overloaded models get one retry |
+| Every Gemini model fails                                                                    | Rule-based plan (`fallback.ts`) with a visible notice; chat answers from `chat-fallback.ts`, labelled as such         |
+| Air-quality API down                                                                        | Plan still produced (precautionary), snapshot shows "unavailable", notice shown                                       |
+| Place not found / geocoder down                                                             | Clear 404 / 502 message, form stays editable                                                                          |
+| Rate limited                                                                                | 429 with `Retry-After`                                                                                                |
+| Network failure in the browser                                                              | Announced error message                                                                                               |
 
 ## Evidence for each criterion
 

@@ -40,6 +40,26 @@ export const CONDITION_OPTIONS = [
   { value: "pregnancy", label: "Pregnancy" },
 ] as const;
 
+/** ISO 3166-1 alpha-2 codes. India is first because it is the default in the form. */
+export const COUNTRY_OPTIONS = [
+  { value: "IN", label: "India" },
+  { value: "PK", label: "Pakistan" },
+  { value: "BD", label: "Bangladesh" },
+  { value: "NP", label: "Nepal" },
+  { value: "LK", label: "Sri Lanka" },
+  { value: "CN", label: "China" },
+  { value: "TH", label: "Thailand" },
+  { value: "ID", label: "Indonesia" },
+  { value: "AE", label: "United Arab Emirates" },
+  { value: "GB", label: "United Kingdom" },
+  { value: "US", label: "United States" },
+  { value: "CA", label: "Canada" },
+  { value: "AU", label: "Australia" },
+  { value: "DE", label: "Germany" },
+  { value: "FR", label: "France" },
+  { value: "PL", label: "Poland" },
+] as const;
+
 /**
  * Extracts the `value` strings of an options list as a non-empty tuple, the shape `z.enum` needs.
  * @param options - A readonly list of `{ value, label }` options.

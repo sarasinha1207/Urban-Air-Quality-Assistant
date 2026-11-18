@@ -11,6 +11,19 @@ describe("profileSchema", () => {
     expect(parsed.location).toEqual({ kind: "query", query: "Delhi" });
   });
 
+  it("accepts a listed country code, or none, and rejects anything else", () => {
+    const withCountry = (country: unknown) =>
+      profileSchema.safeParse({
+        ...profile,
+        location: { kind: "query", query: "600001", country },
+      }).success;
+    expect(withCountry("IN")).toBe(true);
+    expect(withCountry(undefined)).toBe(true);
+    expect(withCountry("XX")).toBe(false);
+    expect(withCountry("in")).toBe(false);
+    expect(withCountry("IN&q=evil")).toBe(false);
+  });
+
   it("accepts device coordinates", () => {
     const location = { kind: "coords", latitude: 28.61, longitude: 77.2 };
     expect(profileSchema.safeParse({ ...profile, location }).success).toBe(true);

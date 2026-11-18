@@ -12,6 +12,8 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   failed?: boolean;
+  /** Answered from built-in guidance because Gemini was unavailable. */
+  builtIn?: boolean;
 }
 
 const SUGGESTIONS = [
@@ -23,7 +25,7 @@ const MAX_HISTORY = 8;
 const GENERIC_ERROR = "Something went wrong. Please try again.";
 const NETWORK_ERROR = "Network problem. Check your connection and try again.";
 
-type Outcome = { ok: true; reply: string } | { ok: false; message: string };
+type Outcome = { ok: true; reply: string; builtIn: boolean } | { ok: false; message: string };
 
 async function askAssistant(history: Message[], context: ChatContext | null): Promise<Outcome> {
   const recent = history.filter((message) => !message.failed).slice(-MAX_HISTORY);
@@ -41,7 +43,7 @@ async function askAssistant(history: Message[], context: ChatContext | null): Pr
     if (!response.ok || !body?.reply) {
       return { ok: false, message: body?.error?.message ?? GENERIC_ERROR };
     }
-    return { ok: true, reply: String(body.reply) };
+    return { ok: true, reply: String(body.reply), builtIn: body.source === "fallback" };
   } catch {
     return { ok: false, message: NETWORK_ERROR };
   }
@@ -90,7 +92,7 @@ export default function ChatWidget({ context }: { context: ChatContext | null })
     setMessages([
       ...next,
       outcome.ok
-        ? { role: "assistant", content: outcome.reply }
+        ? { role: "assistant", content: outcome.reply, builtIn: outcome.builtIn }
         : { role: "assistant", content: outcome.message, failed: true },
     ]);
   }
@@ -146,6 +148,9 @@ export default function ChatWidget({ context }: { context: ChatContext | null })
               >
                 <span className="sr-only">{message.role === "user" ? "You: " : "Assistant: "}</span>
                 {message.content}
+                {message.builtIn && (
+                  <span className="msg-tag">Gemini is busy, so this is built-in guidance.</span>
+                )}
               </p>
             ))}
             {pending && (

@@ -87,6 +87,14 @@ describe("ChatWidget", () => {
     expect(screen.queryByRole("button", { name: "Which mask should I wear?" })).toBeNull();
   });
 
+  it("labels an answer that came from built-in guidance", async () => {
+    fetchMock.mockResolvedValueOnce(json({ reply: "Use an N95.", source: "fallback" }));
+    const { ask } = await open();
+    await ask("mask?");
+    expect(await screen.findByText(/Use an N95\./)).toBeInTheDocument();
+    expect(screen.getByText(/built-in guidance/)).toBeInTheDocument();
+  });
+
   it("ignores empty input", async () => {
     const { user } = await open();
     await user.type(screen.getByLabelText("Your question"), "   {Enter}");

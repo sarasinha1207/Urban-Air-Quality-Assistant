@@ -5,21 +5,30 @@ import { buildChatInstruction, buildUserPrompt, SYSTEM_INSTRUCTION } from "./pro
 import { adviceSchema, type Advice, type ChatRequest, type Profile } from "./schemas";
 
 /**
- * Models tried in order. Stable models come first and "latest" aliases follow, because a preview or
- * alias model can be overloaded (503) or retired (404) while a stable one keeps answering.
+ * Models tried in order. When probed, the lite models answered a full plan in about 3 s and have
+ * their own quotas; 2.5 Flash is better but slower and its free quota runs out first. Models that
+ * took 15 s or hung (gemini-3-flash-preview, gemini-flash-latest) are left out.
  * Override with GEMINI_MODELS (comma-separated).
  */
 const DEFAULT_MODELS = [
+  "gemini-flash-lite-latest",
+  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
   "gemini-flash-latest",
-  "gemini-flash-lite-latest",
-  "gemini-3.5-flash-lite",
 ];
 /** A model that failed is skipped for this long, so later requests do not wait on it again. */
-const COOLDOWN_MS = 60_000;
-const ATTEMPT_TIMEOUT_MS = 15_000;
+const COOLDOWN_MS = 20_000;
+/** An exhausted quota (429) will not come back within a minute, so wait longer before retrying. */
+const QUOTA_COOLDOWN_MS = 5 * 60_000;
+const ATTEMPT_TIMEOUT_MS = 8_000;
+/** If a model has not answered after this long, start the next one alongside it. */
+const HEDGE_MS = 4_000;
+/** Overload (503) comes in short bursts, so models that hit it get one more try after this pause. */
+const RETRY_DELAY_MS = 1_500;
+const MIN_BUDGET_FOR_RETRY_MS = 5_000;
 /** Total time spent across all models; keeps the route inside its serverless time limit. */
-const TOTAL_BUDGET_MS = 25_000;
+const TOTAL_BUDGET_MS = 20_000;
 const MAX_REPLY_CHARS = 2_000;
 
 const coolingUntil = new Map<string, number>();
@@ -62,9 +71,22 @@ function describe(error: unknown): string {
   return typeof status === "number" ? `${name} ${status}` : name;
 }
 
+/** Why a reply was rejected, as field paths only: never the reply text, which echoes user input. */
+function why(error: unknown): string {
+  if (error instanceof z.ZodError) {
+    return error.issues
+      .slice(0, 3)
+      .map((issue) => `${issue.path.join(".") || "root"}: ${issue.code}`)
+      .join("; ");
+  }
+  return error instanceof Error ? error.name : "unknown";
+}
+
 /**
- * Calls Gemini, moving to the next model when one is exhausted, overloaded, retired, slow, or
- * returns something `parse` rejects. Only Gemini models are used.
+ * Calls Gemini, moving to the next model when one is exhausted, overloaded, retired, or returns
+ * something `parse` rejects. If a model has not answered after HEDGE_MS, the next one starts in
+ * parallel and the first valid reply wins, so one stalled model cannot hold the user up.
+ * Only Gemini models are used.
  * @param contents - The conversation or prompt.
  * @param config - Generation settings (the abort signal is added per attempt).
  * @param parse - Turns the reply text into the result, throwing if it is unusable.
@@ -78,12 +100,11 @@ async function generateWithFallback<T>(
 ): Promise<T> {
   const ai = client();
   const started = Date.now();
-  let lastError: unknown = new Error("No Gemini model available");
+  const queue = modelsToTry(started);
+  const cancelLosers = new AbortController();
 
-  for (const model of modelsToTry(started)) {
+  async function attempt(model: string): Promise<T> {
     const remaining = TOTAL_BUDGET_MS - (Date.now() - started);
-    if (remaining <= 0) break;
-
     let text: string | undefined;
     try {
       const response = await ai.models.generateContent({
@@ -93,25 +114,75 @@ async function generateWithFallback<T>(
           ...config,
           // Turning thinking off makes 2.5 Flash about 2-3x faster; other models reject the setting.
           ...(model.startsWith("gemini-2.5-flash") && { thinkingConfig: { thinkingBudget: 0 } }),
-          abortSignal: AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining)),
+          abortSignal: AbortSignal.any([
+            cancelLosers.signal,
+            AbortSignal.timeout(Math.min(ATTEMPT_TIMEOUT_MS, remaining)),
+          ]),
         },
       });
       text = response.text;
     } catch (error) {
-      lastError = error;
-      coolingUntil.set(model, Date.now() + COOLDOWN_MS);
-      console.error(`Gemini model ${model} failed (${describe(error)}); trying the next one`);
-      continue;
+      // A request cancelled because another model already won is not a model failure.
+      if (!cancelLosers.signal.aborted) {
+        const exhausted = (error as { status?: unknown } | null)?.status === 429;
+        coolingUntil.set(model, Date.now() + (exhausted ? QUOTA_COOLDOWN_MS : COOLDOWN_MS));
+        console.error(`Gemini model ${model} failed (${describe(error)}); trying the next one`);
+      }
+      throw error;
     }
 
     try {
       return parse(text);
     } catch (error) {
-      lastError = error;
-      console.error(`Gemini model ${model} gave an unusable reply; trying the next one`);
+      console.error(`Gemini model ${model} gave an unusable reply (${why(error)})`);
+      throw error;
     }
   }
-  throw lastError;
+
+  return new Promise<T>((resolve, reject) => {
+    let inFlight = 0;
+    let settled = false;
+    let retried = false;
+    const overloaded: string[] = [];
+    let hedgeTimer: ReturnType<typeof setTimeout> | undefined;
+    let lastError: unknown = new Error("No Gemini model available");
+
+    const launchNext = () => {
+      clearTimeout(hedgeTimer);
+      if (settled) return;
+      const model = queue.shift();
+      if (model === undefined || Date.now() - started >= TOTAL_BUDGET_MS) {
+        // Nothing left to start: finish once the models still running have failed too.
+        if (inFlight > 0) return;
+        const timeLeft = TOTAL_BUDGET_MS - (Date.now() - started);
+        if (retried || overloaded.length === 0 || timeLeft < MIN_BUDGET_FOR_RETRY_MS) {
+          reject(lastError);
+          return;
+        }
+        retried = true;
+        queue.push(...overloaded);
+        hedgeTimer = setTimeout(launchNext, RETRY_DELAY_MS);
+        return;
+      }
+      inFlight++;
+      hedgeTimer = setTimeout(launchNext, HEDGE_MS);
+      attempt(model).then(
+        (result) => {
+          settled = true;
+          clearTimeout(hedgeTimer);
+          cancelLosers.abort();
+          resolve(result);
+        },
+        (error) => {
+          lastError = error;
+          if ((error as { status?: unknown } | null)?.status === 503) overloaded.push(model);
+          inFlight--;
+          launchNext();
+        },
+      );
+    };
+    launchNext();
+  });
 }
 
 /**

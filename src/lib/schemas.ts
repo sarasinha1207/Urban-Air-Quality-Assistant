@@ -3,6 +3,7 @@ import {
   COMMUTE_OPTIONS,
   CONDITION_OPTIONS,
   COOKING_FUEL_OPTIONS,
+  COUNTRY_OPTIONS,
   HEATING_FUEL_OPTIONS,
   HOME_OPTIONS,
   optionValues,
@@ -20,6 +21,8 @@ const locationSchema = z.discriminatedUnion("kind", [
       .min(2, "Enter at least 2 characters for the city or ZIP code.")
       .max(80, "Location must be 80 characters or fewer.")
       .regex(LOCATION_PATTERN, "Location may only contain letters, numbers, spaces and , . ' -"),
+    /** Narrows the search; omitted means any country. */
+    country: z.enum(optionValues(COUNTRY_OPTIONS)).optional(),
   }),
   z.strictObject({
     kind: z.literal("coords"),
@@ -44,16 +47,16 @@ const text = (max: number) => z.string().trim().min(1).max(max);
 
 const suggestionSchema = z.strictObject({
   title: text(80),
-  detail: text(300),
+  detail: text(200),
   // Rejects vague claims: every impact must carry a number or range.
-  impact: text(200).refine((value) => /\d/.test(value), "Impact must be quantified."),
+  impact: text(120).refine((value) => /\d/.test(value), "Impact must be quantified."),
 });
 
 const suggestionList = z.array(suggestionSchema).min(3).max(5);
 
 /** The structure Gemini must return. Also used to build the JSON schema sent to the model. */
 export const adviceSchema = z.strictObject({
-  snapshotSummary: text(400),
+  snapshotSummary: text(300),
   routine: suggestionList,
   indoorHacks: suggestionList,
   alternatives: suggestionList,

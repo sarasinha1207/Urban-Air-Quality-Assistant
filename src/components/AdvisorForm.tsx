@@ -7,10 +7,13 @@ import {
   COMMUTE_OPTIONS,
   CONDITION_OPTIONS,
   COOKING_FUEL_OPTIONS,
+  COUNTRY_OPTIONS,
   HEATING_FUEL_OPTIONS,
   HOME_OPTIONS,
 } from "@/lib/options";
 import { CheckField, SelectField } from "./Fields";
+
+const COUNTRY_CHOICES = [...COUNTRY_OPTIONS, { value: "", label: "Any country" }];
 
 // Both are only needed after load or after a submit, so keep them out of the first bundle.
 const Results = dynamic(() => import("./Results"), {
@@ -90,7 +93,12 @@ export default function AdvisorForm() {
     const outcome = await requestAdvice({
       location: coords
         ? { kind: "coords", ...coords }
-        : { kind: "query", query: String(form.get("location")) },
+        : {
+            kind: "query",
+            query: String(form.get("location")),
+            // An empty value means "Any country"; undefined is dropped from the JSON.
+            country: String(form.get("country")) || undefined,
+          },
       hasChildren: form.has("hasChildren"),
       hasElderly: form.has("hasElderly"),
       conditions: form.getAll("conditions"),
@@ -123,6 +131,12 @@ export default function AdvisorForm() {
 
           <fieldset>
             <legend>Where are you?</legend>
+            <SelectField
+              name="country"
+              label="Country"
+              options={COUNTRY_CHOICES}
+              defaultValue="IN"
+            />
             <div className="field">
               <label htmlFor="location">City or ZIP code</label>
               <input
@@ -130,7 +144,7 @@ export default function AdvisorForm() {
                 name="location"
                 type="text"
                 autoComplete="off"
-                placeholder="e.g. Delhi, 10001 or 110001, India"
+                placeholder="e.g. Delhi or 600001"
                 required={!coords}
                 minLength={2}
                 maxLength={80}

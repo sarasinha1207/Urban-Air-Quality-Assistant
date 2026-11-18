@@ -886,6 +886,13 @@ button[aria-disabled="true"] {
   color: var(--danger-fg);
 }
 
+.msg-tag {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
 .chat-chips {
   display: flex;
   flex-wrap: wrap;

@@ -81,6 +81,23 @@ describe("geocode", () => {
       expect(init.headers["User-Agent"]).toContain("UrbanAirQualityAssistant");
     });
 
+    it("builds a short label from the address parts", async () => {
+      mockPostcodeLookup([
+        {
+          ...delhi,
+          display_name: "600001, Zone 5 Royapuram, Tondiarpet, Chennai, Tamil Nadu, India",
+          address: {
+            country_code: "in",
+            postcode: "600001",
+            town: "Chennai",
+            state: "Tamil Nadu",
+            country: "India",
+          },
+        },
+      ]);
+      expect((await geocode("600001", "IN"))?.name).toBe("600001, Chennai, Tamil Nadu, India");
+    });
+
     it("accepts several matches when they are all in one country", async () => {
       mockPostcodeLookup([delhi, { ...delhi, lat: "28.7" }]);
       expect((await geocode("110001"))?.latitude).toBe(28.6291);
@@ -96,6 +113,13 @@ describe("geocode", () => {
       await expect(geocode("999999")).resolves.toBeNull();
       mockPostcodeLookup([{ ...delhi, lat: "north" }]);
       await expect(geocode("110001, India")).resolves.toBeNull();
+    });
+
+    it("limits both services to the chosen country", async () => {
+      const fetchMock = mockPostcodeLookup([delhi]);
+      await geocode("110001", "IN");
+      expect(String(fetchMock.mock.calls[0]?.[0])).toContain("countryCode=IN");
+      expect(String(fetchMock.mock.calls[1]?.[0])).toContain("countrycodes=in");
     });
 
     it("does not call OpenStreetMap for a plain city name", async () => {

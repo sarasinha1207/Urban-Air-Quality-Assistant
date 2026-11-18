@@ -36,7 +36,7 @@ async function resolvePlace(location: Profile["location"]) {
   if (location.kind === "coords") {
     return { name: "Your location", latitude: location.latitude, longitude: location.longitude };
   }
-  const place = await geocode(location.query).catch(() => {
+  const place = await geocode(location.query, location.country).catch(() => {
     throw new UpstreamError("The location service is unavailable");
   });
   if (!place) throw new LocationNotFoundError(location.query);

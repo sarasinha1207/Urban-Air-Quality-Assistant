@@ -64,7 +64,7 @@ describe("AdvisorForm", () => {
     ).toBeInTheDocument();
     expect(screen.getAllByText(/your impact:/i)).toHaveLength(9);
     expect(JSON.parse(fetchMock.mock.calls[0]?.[1].body)).toEqual({
-      location: { kind: "query", query: "Delhi" },
+      location: { kind: "query", query: "Delhi", country: "IN" },
       hasChildren: true,
       hasElderly: false,
       conditions: ["respiratory"],
@@ -76,6 +76,32 @@ describe("AdvisorForm", () => {
     await waitFor(() =>
       expect(screen.getByRole("region", { name: "Your clean-air plan" })).toHaveFocus(),
     );
+  });
+
+  it("defaults the country to India and sends the one chosen", async () => {
+    const { user, submit } = setup();
+    expect(screen.getByLabelText("Country")).toHaveValue("IN");
+    await user.selectOptions(screen.getByLabelText("Country"), "GB");
+    await user.type(screen.getByLabelText("City or ZIP code"), "SW1A 1AA");
+    await submit();
+    await screen.findByRole("heading", { name: /today.s air snapshot/i });
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1].body).location).toEqual({
+      kind: "query",
+      query: "SW1A 1AA",
+      country: "GB",
+    });
+  });
+
+  it("leaves the country out when Any country is chosen", async () => {
+    const { user, submit } = setup();
+    await user.selectOptions(screen.getByLabelText("Country"), "Any country");
+    await user.type(screen.getByLabelText("City or ZIP code"), "Paris");
+    await submit();
+    await screen.findByRole("heading", { name: /today.s air snapshot/i });
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1].body).location).toEqual({
+      kind: "query",
+      query: "Paris",
+    });
   });
 
   it("shows a loading status and ignores a second submit while loading", async () => {
