@@ -54,7 +54,7 @@ src/
   lib/
     schemas.ts            Zod: request profile and Gemini output
     options.ts            Single source for every select/checkbox option
-    aqi.ts                Open-Meteo geocoding + air quality (timeouts, edge cache, validation)
+    aqi.ts                Open-Meteo geocoding + air quality; OpenStreetMap Nominatim for non-US postcodes
     gemini.ts, prompt.ts  Gemini call: system instruction separate from user data
     fallback.ts           Deterministic plan when Gemini is unavailable
     advice-service.ts     Orchestration, AI-response cache, graceful degradation

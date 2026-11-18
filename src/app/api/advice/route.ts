@@ -38,7 +38,7 @@ export async function POST(request: Request): Promise<Response> {
       return errorResponse(
         404,
         "location_not_found",
-        "We could not find that place. Try a nearby city or a ZIP code.",
+        "We could not find that place. Try a nearby city, or add the country to a ZIP or PIN code (for example 110001, India).",
       );
     }
     if (error instanceof UpstreamError) {

@@ -10,10 +10,11 @@ describe("Home page", () => {
     ).toBeInTheDocument();
     expect(screen.getByRole("main")).toBeInTheDocument();
     expect(screen.getByRole("contentinfo")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open-Meteo.com" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open-Meteo" })).toHaveAttribute(
       "href",
       "https://open-meteo.com/",
     );
+    expect(screen.getByRole("contentinfo")).toHaveTextContent("Chat support: Google Gemini");
     expect(screen.getByRole("link", { name: /skip to main content/i })).toHaveAttribute(
       "href",
       "#main",

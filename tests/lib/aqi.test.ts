@@ -51,6 +51,60 @@ describe("geocode", () => {
     await expect(geocode("Nowhereville")).resolves.toBeNull();
   });
 
+  describe("postal codes Open-Meteo does not know", () => {
+    const delhi = {
+      lat: "28.6291",
+      lon: "77.2190",
+      display_name: "110001, New Delhi, Delhi, India",
+      address: { country_code: "in" },
+    };
+
+    /** Open-Meteo finds nothing, then Nominatim answers. */
+    function mockPostcodeLookup(matches: unknown[]) {
+      const fn = vi
+        .fn()
+        .mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }))
+        .mockResolvedValueOnce(new Response(JSON.stringify(matches), { status: 200 }));
+      vi.stubGlobal("fetch", fn);
+      return fn;
+    }
+
+    it("falls back to OpenStreetMap when the query has a digit", async () => {
+      const fetchMock = mockPostcodeLookup([delhi]);
+      await expect(geocode("110001, India")).resolves.toEqual({
+        name: "110001, New Delhi, Delhi, India",
+        latitude: 28.6291,
+        longitude: 77.219,
+      });
+      const [url, init] = fetchMock.mock.calls[1] ?? [];
+      expect(String(url)).toContain("nominatim.openstreetmap.org");
+      expect(init.headers["User-Agent"]).toContain("UrbanAirQualityAssistant");
+    });
+
+    it("accepts several matches when they are all in one country", async () => {
+      mockPostcodeLookup([delhi, { ...delhi, lat: "28.7" }]);
+      expect((await geocode("110001"))?.latitude).toBe(28.6291);
+    });
+
+    it("returns null when the code exists in several countries", async () => {
+      mockPostcodeLookup([delhi, { ...delhi, address: { country_code: "cn" } }]);
+      await expect(geocode("110001")).resolves.toBeNull();
+    });
+
+    it("returns null for no matches or unusable coordinates", async () => {
+      mockPostcodeLookup([]);
+      await expect(geocode("999999")).resolves.toBeNull();
+      mockPostcodeLookup([{ ...delhi, lat: "north" }]);
+      await expect(geocode("110001, India")).resolves.toBeNull();
+    });
+
+    it("does not call OpenStreetMap for a plain city name", async () => {
+      const fetchMock = mockFetch({});
+      await expect(geocode("Nowhereville")).resolves.toBeNull();
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("throws UpstreamError on an HTTP error", async () => {
     mockFetch({}, { status: 500 });
     await expect(geocode("Delhi")).rejects.toBeInstanceOf(UpstreamError);

@@ -928,20 +928,9 @@ button[aria-disabled="true"] {
   font-size: 0.8rem;
 }
 
-.footer-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px 24px;
-}
-
 .site-footer p {
   margin: 0;
-}
-
-.footer-brand {
-  font-weight: 700;
+  text-align: center;
 }
 
 .site-footer a {
@@ -964,13 +953,6 @@ button[aria-disabled="true"] {
   }
 }
 
-@media (min-width: 720px) {
-  /* Keep the fixed chat button from covering the footer text. */
-  .footer-inner {
-    padding-right: 220px;
-  }
-}
-
 @media (min-width: 960px) {
   .dashboard {
     grid-template-columns: 340px minmax(0, 1fr);
@@ -981,7 +963,8 @@ button[aria-disabled="true"] {
   }
 }
 
-@media (max-width: 719px) {
+@media (max-width: 1099px) {
+  /* Keep the fixed chat button from covering the centred footer text. */
   .site-footer {
     padding-bottom: 76px;
   }

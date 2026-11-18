@@ -130,7 +130,7 @@ export default function AdvisorForm() {
                 name="location"
                 type="text"
                 autoComplete="off"
-                placeholder="e.g. Delhi or 10001"
+                placeholder="e.g. Delhi, 10001 or 110001, India"
                 required={!coords}
                 minLength={2}
                 maxLength={80}

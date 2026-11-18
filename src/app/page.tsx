@@ -46,11 +46,10 @@ export default function Home() {
         <AdvisorForm />
       </main>
       <footer className="site-footer">
-        <div className="container footer-inner">
-          <p className="footer-brand">Urban Air Quality Assistant</p>
+        <div className="container">
           <p>
-            Air data by <a href="https://open-meteo.com/">Open-Meteo.com</a> (CC BY 4.0) · Plans by
-            Google Gemini · Figures are estimates
+            <strong>Urban Air Quality Assistant</strong> · Live air data:{" "}
+            <a href="https://open-meteo.com/">Open-Meteo</a> · Chat support: Google Gemini
           </p>
         </div>
       </footer>

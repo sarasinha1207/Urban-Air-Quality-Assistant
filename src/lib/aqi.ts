@@ -56,6 +56,15 @@ const geocodeSchema = z.object({
     .optional(),
 });
 
+const nominatimSchema = z.array(
+  z.object({
+    lat: z.string(),
+    lon: z.string(),
+    display_name: z.string(),
+    address: z.object({ country_code: z.string().optional() }).optional(),
+  }),
+);
+
 const airQualitySchema = z.object({
   current: z.object({
     time: z.string(),
@@ -75,10 +84,11 @@ export function categorize(usAqi: number): AqiCategory {
 }
 
 /** Fetches JSON with a hard timeout and edge caching, then validates it against `schema`. */
-async function fetchJson<T>(url: URL, schema: z.ZodType<T>): Promise<T> {
+async function fetchJson<T>(url: URL, schema: z.ZodType<T>, headers?: HeadersInit): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, {
+      headers,
       signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS),
       next: { revalidate: REVALIDATE_SECONDS },
     });
@@ -93,12 +103,43 @@ async function fetchJson<T>(url: URL, schema: z.ZodType<T>): Promise<T> {
 }
 
 /**
- * Resolves a city name or postal code to coordinates with the keyless Open-Meteo geocoder.
+ * Resolves a city name or postal code to coordinates. Open-Meteo answers city names and US ZIP
+ * codes; any other query containing a digit (e.g. an Indian PIN) falls back to OpenStreetMap.
  * @param query - Already-validated free-text location.
  * @returns The best match, or `null` when nothing matches.
- * @throws {UpstreamError} When the geocoding service fails.
+ * @throws {UpstreamError} When a geocoding service fails.
  */
 export async function geocode(query: string): Promise<Place | null> {
+  return (await geocodeWithOpenMeteo(query)) ?? (/\d/.test(query) ? geocodePostcode(query) : null);
+}
+
+/**
+ * Postal codes repeat across countries (110001 is in India, China and Singapore), so a code with no
+ * country is only accepted when every match is in the same country; otherwise the user must add one.
+ */
+async function geocodePostcode(query: string): Promise<Place | null> {
+  const url = new URL("https://nominatim.openstreetmap.org/search");
+  url.search = new URLSearchParams({
+    q: query,
+    format: "jsonv2",
+    limit: "5",
+    addressdetails: "1",
+    "accept-language": "en",
+  }).toString();
+
+  // Nominatim's usage policy requires an identifying User-Agent.
+  const matches = await fetchJson(url, nominatimSchema, {
+    "User-Agent": "UrbanAirQualityAssistant/1.0",
+  });
+  const first = matches[0];
+  if (!first || new Set(matches.map((m) => m.address?.country_code)).size > 1) return null;
+  const latitude = Number(first.lat);
+  const longitude = Number(first.lon);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return { name: sanitizeText(first.display_name, 80), latitude, longitude };
+}
+
+async function geocodeWithOpenMeteo(query: string): Promise<Place | null> {
   const url = new URL("https://geocoding-api.open-meteo.com/v1/search");
   url.search = new URLSearchParams({
     name: query,
