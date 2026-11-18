@@ -82,7 +82,7 @@ body {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 20px;
@@ -721,12 +721,8 @@ button[aria-disabled="true"] {
 .sections {
   display: grid;
   gap: 20px;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
   align-items: start;
-}
-
-.sections .tone-routine {
-  grid-column: 1 / -1;
 }
 
 .suggestions {
@@ -739,7 +735,7 @@ button[aria-disabled="true"] {
 .suggestions li {
   position: relative;
   counter-increment: tip;
-  padding: 14px 0 14px 46px;
+  padding: 12px 0 12px 42px;
   border-top: 1px solid var(--border-soft);
 }
 
@@ -752,11 +748,11 @@ button[aria-disabled="true"] {
   content: counter(tip);
   position: absolute;
   left: 0;
-  top: 14px;
+  top: 12px;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   background: var(--tone-accent-bg);
   color: var(--tone-accent-fg);
@@ -925,16 +921,27 @@ button[aria-disabled="true"] {
 
 /* Footer */
 .site-footer {
-  margin-top: 56px;
-  padding: 28px 0 96px;
+  margin-top: 40px;
+  padding: 14px 0;
   background: var(--footer-bg);
   color: var(--footer-fg);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 24px;
 }
 
 .site-footer p {
-  margin-top: 0;
-  margin-bottom: 0;
+  margin: 0;
+}
+
+.footer-brand {
+  font-weight: 700;
 }
 
 .site-footer a {
@@ -957,13 +964,26 @@ button[aria-disabled="true"] {
   }
 }
 
+@media (min-width: 720px) {
+  /* Keep the fixed chat button from covering the footer text. */
+  .footer-inner {
+    padding-right: 220px;
+  }
+}
+
 @media (min-width: 960px) {
   .dashboard {
-    grid-template-columns: 380px minmax(0, 1fr);
+    grid-template-columns: 340px minmax(0, 1fr);
   }
 
   .hero {
     padding: 44px 48px 48px;
+  }
+}
+
+@media (max-width: 719px) {
+  .site-footer {
+    padding-bottom: 76px;
   }
 }
 

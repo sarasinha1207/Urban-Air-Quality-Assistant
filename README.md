@@ -23,10 +23,10 @@ cp .env.example .env.local   # then set GEMINI_API_KEY
 npm run dev                  # http://localhost:3000
 ```
 
-| Variable         | Required | Purpose                                                        |
-| ---------------- | -------- | -------------------------------------------------------------- |
-| `GEMINI_API_KEY` | yes      | Server-side Gemini key. Never exposed to the browser.          |
-| `GEMINI_MODEL`   | no       | Defaults to the `gemini-flash-latest` alias; pin a model here. |
+| Variable         | Required | Purpose                                                      |
+| ---------------- | -------- | ------------------------------------------------------------ |
+| `GEMINI_API_KEY` | yes      | Server-side Gemini key. Never exposed to the browser.        |
+| `GEMINI_MODELS`  | no       | Comma-separated Gemini models tried in order (see failover). |
 
 Scripts: `npm run lint`, `format:check`, `typecheck`, `test:coverage`, `e2e`, `audit:deps`,
 `verify` (lint + format + types + coverage).
@@ -68,15 +68,25 @@ live AQI → Gemini (`responseMimeType: application/json` + JSON schema, output 
 Zod) → response. The browser only ever talks to its own origin; all third-party calls are
 server-side.
 
+## Gemini model failover
+
+Gemini is the only AI used. `src/lib/gemini.ts` tries `gemini-2.5-flash`, `gemini-flash-latest`,
+`gemini-flash-lite-latest`, then `gemini-3.5-flash-lite` (override with `GEMINI_MODELS`). If a model
+returns 429/503/404, times out, or gives an unusable reply, the next one is tried within a 25 s
+budget, and the failed model is skipped for 60 s so later requests do not wait on it again. The
+default order was chosen by testing: in practice some alias and preview models returned 503 or 404
+while stable ones answered.
+
 ## Failure handling
 
-| Failure                         | Behaviour                                                                          |
-| ------------------------------- | ---------------------------------------------------------------------------------- |
-| Gemini error, timeout, bad JSON | Rule-based plan (`fallback.ts`) built from the same profile, with a visible notice |
-| Air-quality API down            | Plan still produced (precautionary), snapshot shows "unavailable", notice shown    |
-| Place not found / geocoder down | Clear 404 / 502 message, form stays editable                                       |
-| Rate limited                    | 429 with `Retry-After`                                                             |
-| Network failure in the browser  | Announced error message                                                            |
+| Failure                                                                                     | Behaviour                                                                                                       |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| One Gemini model exhausted (429), overloaded (503), retired (404), slow or returns bad JSON | Next Gemini model in `GEMINI_MODELS` is used; the failed one is skipped for 60 s                                |
+| Every Gemini model fails                                                                    | Rule-based plan (`fallback.ts`) built from the same profile, with a visible notice; chat shows a friendly error |
+| Air-quality API down                                                                        | Plan still produced (precautionary), snapshot shows "unavailable", notice shown                                 |
+| Place not found / geocoder down                                                             | Clear 404 / 502 message, form stays editable                                                                    |
+| Rate limited                                                                                | 429 with `Retry-After`                                                                                          |
+| Network failure in the browser                                                              | Announced error message                                                                                         |
 
 ## Evidence for each criterion
 
