@@ -1,0 +1,87 @@
+/* Decorative glyphs; the second declaration marks them as having no text alternative. */
+.tone-snapshot > h3::before {
+  content: "☁";
+  content: "☁" / "";
+}
+.tone-routine > h3::before {
+  content: "☀";
+  content: "☀" / "";
+}
+.tone-indoor > h3::before {
+  content: "⌂";
+  content: "⌂" / "";
+}
+.tone-alt > h3::before {
+  content: "♻";
+  content: "♻" / "";
+}
+
+.place {
+  margin: 0 0 14px;
+  color: var(--snapshot-fg);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.snapshot-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+}
+
+.aqi-block {
+  min-width: 0;
+}
+
+.aqi-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0 0 12px;
+  padding: 18px 16px;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.aqi-symbol {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.aqi-value {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.aqi-badge span:last-child {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.aqi-0 {
+  background: var(--aqi-0-bg);
+  color: var(--aqi-0-fg);
+}
+.aqi-1 {
+  background: var(--aqi-1-bg);
+  color: var(--aqi-1-fg);
+}
+.aqi-2 {
+  background: var(--aqi-2-bg);
+  color: var(--aqi-2-fg);
+}
+.aqi-3 {
+  background: var(--aqi-3-bg);
+  color: var(--aqi-3-fg);
+}
+.aqi-4 {
+  background: var(--aqi-4-bg);
+  color: var(--aqi-4-fg);
+}
+.aqi-5 {
+  background: var(--aqi-5-bg);
+  color: var(--aqi-5-fg);
+}

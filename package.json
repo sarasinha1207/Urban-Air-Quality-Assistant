@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "description": "GenAI assistant for low-emission routines and indoor air hacks during severe smog.",
+  "license": "MIT",
   "engines": {
     "node": ">=20.9"
   },
@@ -10,7 +11,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . -c eslint.quality.config.mjs --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",

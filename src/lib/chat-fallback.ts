@@ -1,4 +1,4 @@
-import { categorize } from "./aqi";
+import { categorize } from "./air-quality";
 import type { ChatRequest } from "./schemas";
 
 /**

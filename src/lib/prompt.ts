@@ -1,4 +1,4 @@
-import type { AirSnapshot } from "./aqi";
+import type { AirSnapshot } from "./air-quality";
 import { householdOf, type Profile } from "./schemas";
 
 /**

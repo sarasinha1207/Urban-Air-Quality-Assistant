@@ -1,9 +1,11 @@
 import { createHash } from "node:crypto";
-import { fetchSnapshot, geocode, type AirSnapshot } from "./aqi";
+import { fetchSnapshot, type AirSnapshot } from "./air-quality";
+import { geocode } from "./geocoding";
 import { TtlCache } from "./cache";
 import { LocationNotFoundError, UpstreamError } from "./errors";
 import { buildFallbackAdvice } from "./fallback";
 import { generateAdvice } from "./gemini";
+import { MINUTE_MS } from "./limits";
 import { householdOf, type Advice, type Profile } from "./schemas";
 
 export interface AdviceResponse {
@@ -22,13 +24,18 @@ const AQI_UNAVAILABLE_NOTICE =
 const AI_UNAVAILABLE_NOTICE =
   "The AI assistant is unavailable right now, so this plan comes from our built-in smog guidance.";
 
-const AI_CACHE_TTL_MS = 15 * 60 * 1000;
-const aiCache = new TtlCache<Advice>(AI_CACHE_TTL_MS, 200);
+const AI_CACHE_TTL_MINUTES = 15;
+const AI_CACHE_MAX_ENTRIES = 200;
+/** Pollution bands are this wide (µg/m³ of PM2.5), so near-identical readings share an answer. */
+const PM25_BAND_WIDTH = 10;
+const aiCache = new TtlCache<Advice>(AI_CACHE_TTL_MINUTES * MINUTE_MS, AI_CACHE_MAX_ENTRIES);
 
 /** Identical households in the same place and pollution band share one cached answer. */
 function cacheKey(profile: Profile, placeName: string, snapshot: AirSnapshot | null): string {
   const household = householdOf(profile);
-  const band = snapshot ? `${snapshot.category.level}:${Math.round(snapshot.pm25 / 10)}` : "none";
+  const band = snapshot
+    ? `${snapshot.category.level}:${Math.round(snapshot.pm25 / PM25_BAND_WIDTH)}`
+    : "none";
   return createHash("sha256").update(JSON.stringify({ household, placeName, band })).digest("hex");
 }
 

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isDevelopment } from "@/lib/config";
 import { buildCsp } from "@/lib/csp";
 
 /**
@@ -9,7 +10,7 @@ import { buildCsp } from "@/lib/csp";
  */
 export function proxy(request: NextRequest): NextResponse {
   const nonce = btoa(crypto.randomUUID());
-  const csp = buildCsp(nonce, process.env.NODE_ENV === "development");
+  const csp = buildCsp(nonce, isDevelopment());
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("content-security-policy", csp);

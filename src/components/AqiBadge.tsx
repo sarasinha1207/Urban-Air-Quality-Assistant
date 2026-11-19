@@ -1,11 +1,11 @@
-import type { AqiCategory } from "@/lib/aqi";
+import { AQI_LEVEL, type AqiCategory } from "@/lib/aqi-levels";
 
 interface AqiBadgeProps {
   aqi: number;
   category: AqiCategory;
 }
 
-const SCALE_STEPS = [0, 1, 2, 3, 4, 5] as const;
+const SCALE_STEPS = Object.values(AQI_LEVEL);
 
 /**
  * Shows the AQI as number, shape glyph and words, so colour is never the only signal. The coloured

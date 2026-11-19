@@ -2,7 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AqiBadge } from "@/components/AqiBadge";
 import Results from "@/components/Results";
-import { AQI_CATEGORIES } from "@/lib/aqi";
+import { AQI_CATEGORIES } from "@/lib/air-quality";
 import { adviceResponse, snapshot } from "../fixtures";
 
 describe("Results", () => {

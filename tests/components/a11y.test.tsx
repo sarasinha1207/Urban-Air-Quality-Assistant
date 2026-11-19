@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, it, vi } from "vitest";
 import { AqiBadge } from "@/components/AqiBadge";
 import Home from "@/app/page";
-import { AQI_CATEGORIES } from "@/lib/aqi";
+import { AQI_CATEGORIES } from "@/lib/air-quality";
 import { adviceResponse } from "../fixtures";
 import { expectNoA11yViolations } from "../helpers/axe";
 

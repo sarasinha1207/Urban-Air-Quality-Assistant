@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import "./globals.css";
+import "@/styles/index.css";
 
 export const metadata: Metadata = {
   title: "Urban Air Quality Assistant",

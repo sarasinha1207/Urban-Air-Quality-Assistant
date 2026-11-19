@@ -89,6 +89,14 @@ describe("generateAdvice", () => {
   });
 });
 
+describe("an empty answer", () => {
+  it("is unusable on every model, for plans as well as chat", async () => {
+    generateContent.mockResolvedValue({ text: undefined });
+    await expect(gemini.generateAdvice(profile, "Delhi", snapshot)).rejects.toThrow();
+    expect(generateContent).toHaveBeenCalledTimes(DEFAULT_MODEL_COUNT);
+  });
+});
+
 describe("model failover", () => {
   it("switches to the next model when one is overloaded or exhausted", async () => {
     generateContent.mockRejectedValueOnce(apiError(429)).mockResolvedValueOnce(planReply);

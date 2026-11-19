@@ -89,6 +89,8 @@ test("the page ships a nonce-based CSP and security headers", async ({ page }) =
   expect(headers["x-frame-options"]).toBe("DENY");
   expect(headers["x-content-type-options"]).toBe("nosniff");
   expect(headers["strict-transport-security"]).toContain("max-age=");
+  expect(headers["cross-origin-resource-policy"]).toBe("same-origin");
+  expect(headers["permissions-policy"]).toContain("camera=()");
   expect(headers["x-powered-by"]).toBeUndefined();
 });
 

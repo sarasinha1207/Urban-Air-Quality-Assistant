@@ -7,9 +7,9 @@ const geocode = vi.hoisted(() => vi.fn());
 const fetchSnapshot = vi.hoisted(() => vi.fn());
 const generateAdvice = vi.hoisted(() => vi.fn());
 
-vi.mock("@/lib/aqi", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/aqi")>()),
-  geocode,
+vi.mock("@/lib/geocoding", () => ({ geocode }));
+vi.mock("@/lib/air-quality", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/air-quality")>()),
   fetchSnapshot,
 }));
 vi.mock("@/lib/gemini", () => ({ generateAdvice }));

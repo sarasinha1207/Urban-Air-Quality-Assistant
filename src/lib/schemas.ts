@@ -8,6 +8,7 @@ import {
   HOME_OPTIONS,
   optionValues,
 } from "./options";
+import { LIMITS } from "./limits";
 
 /** Letters, digits, spaces and basic punctuation only: no markup, quotes or control characters. */
 const LOCATION_PATTERN = /^[\p{L}\p{N}\s,.'-]+$/u;
@@ -18,16 +19,19 @@ const locationSchema = z.discriminatedUnion("kind", [
     query: z
       .string()
       .trim()
-      .min(2, "Enter at least 2 characters for the city or ZIP code.")
-      .max(80, "Location must be 80 characters or fewer.")
+      .min(
+        LIMITS.location.min,
+        `Enter at least ${LIMITS.location.min} characters for the city or ZIP code.`,
+      )
+      .max(LIMITS.location.max, `Location must be ${LIMITS.location.max} characters or fewer.`)
       .regex(LOCATION_PATTERN, "Location may only contain letters, numbers, spaces and , . ' -"),
     /** Narrows the search; omitted means any country. */
     country: z.enum(optionValues(COUNTRY_OPTIONS)).optional(),
   }),
   z.strictObject({
     kind: z.literal("coords"),
-    latitude: z.number().min(-90).max(90),
-    longitude: z.number().min(-180).max(180),
+    latitude: z.number().min(-LIMITS.latitude).max(LIMITS.latitude),
+    longitude: z.number().min(-LIMITS.longitude).max(LIMITS.longitude),
   }),
 ]);
 
@@ -46,18 +50,21 @@ export const profileSchema = z.strictObject({
 const text = (max: number) => z.string().trim().min(1).max(max);
 
 const suggestionSchema = z.strictObject({
-  title: text(80),
-  detail: text(200),
+  title: text(LIMITS.suggestion.titleMax),
+  detail: text(LIMITS.suggestion.detailMax),
   // Rejects vague claims: every impact must carry a number or range. A regex (not a refine) is
   // used so it is also sent to Gemini as a JSON-schema `pattern` and constrains the output.
-  impact: text(120).regex(/\d/, "Impact must be quantified."),
+  impact: text(LIMITS.suggestion.impactMax).regex(/\d/, "Impact must be quantified."),
 });
 
-const suggestionList = z.array(suggestionSchema).min(3).max(5);
+const suggestionList = z
+  .array(suggestionSchema)
+  .min(LIMITS.suggestion.perListMin)
+  .max(LIMITS.suggestion.perListMax);
 
 /** The structure Gemini must return. Also used to build the JSON schema sent to the model. */
 export const adviceSchema = z.strictObject({
-  snapshotSummary: text(300),
+  snapshotSummary: text(LIMITS.summaryMax),
   routine: suggestionList,
   indoorHacks: suggestionList,
   alternatives: suggestionList,
@@ -68,21 +75,31 @@ export const chatSchema = z
   .strictObject({
     messages: z
       .array(
-        z.strictObject({
-          role: z.enum(["user", "assistant"]),
-          content: z
-            .string()
-            .trim()
-            .min(1, "Type a question first.")
-            .max(500, "Keep questions under 500 characters."),
-        }),
+        z.discriminatedUnion("role", [
+          z.strictObject({
+            role: z.literal("user"),
+            content: z
+              .string()
+              .trim()
+              .min(1, "Type a question first.")
+              .max(
+                LIMITS.chat.userMessageMax,
+                `Keep questions under ${LIMITS.chat.userMessageMax} characters.`,
+              ),
+          }),
+          // The assistant's earlier replies are sent back as history, and can be much longer.
+          z.strictObject({
+            role: z.literal("assistant"),
+            content: z.string().trim().min(1).max(LIMITS.chat.assistantMessageMax),
+          }),
+        ]),
       )
       .min(1)
-      .max(8),
+      .max(LIMITS.chat.historyMax),
     context: z
       .strictObject({
-        placeName: z.string().trim().max(80).regex(LOCATION_PATTERN),
-        usAqi: z.number().min(0).max(500),
+        placeName: z.string().trim().max(LIMITS.location.max).regex(LOCATION_PATTERN),
+        usAqi: z.number().min(0).max(LIMITS.maxAqi),
       })
       .optional(),
   })

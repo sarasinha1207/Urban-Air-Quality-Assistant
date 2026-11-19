@@ -1,0 +1,64 @@
+/* Breakpoints and motion preferences. Kept last so they override the component rules above. */
+@media (min-width: 560px) and (max-width: 959px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 720px) {
+  .snapshot-grid {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 960px) {
+  .dashboard {
+    grid-template-columns: 340px minmax(0, 1fr);
+  }
+
+  .hero {
+    padding: 44px 48px 48px;
+  }
+}
+
+@media (max-width: 1099px) {
+  /* Keep the fixed chat button from covering the centred footer text. */
+  .site-footer {
+    padding-bottom: 76px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-note {
+    display: none;
+  }
+
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .chat-launcher {
+    right: 16px;
+    bottom: 16px;
+  }
+
+  .chat-panel {
+    right: 16px;
+    bottom: 82px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+
+  button {
+    transition: none;
+  }
+
+  button:hover {
+    transform: none;
+  }
+}

@@ -1,12 +1,12 @@
 import type { AdviceResponse } from "@/lib/advice-service";
 import type { Suggestion } from "@/lib/schemas";
-import { AqiBadge } from "./AqiBadge";
+import { SnapshotCard } from "./SnapshotCard";
 
 interface SuggestionSectionProps {
   id: string;
   title: string;
   items: Suggestion[];
-  /** Colour theme for the section, defined in globals.css. */
+  /** Colour theme for the section, defined in src/styles/sections.css. */
   tone: "routine" | "indoor" | "alt";
 }
 
@@ -29,80 +29,54 @@ function SuggestionSection({ id, title, items, tone }: SuggestionSectionProps) {
   );
 }
 
+function Notices({ notices }: { notices: string[] }) {
+  return notices.map((notice) => (
+    <p key={notice} className="notice">
+      {notice}
+    </p>
+  ));
+}
+
+function SuggestionSections({ advice }: { advice: AdviceResponse["advice"] }) {
+  return (
+    <div className="sections">
+      <SuggestionSection
+        id="routine-heading"
+        title="Low-Emission Daily Routine"
+        items={advice.routine}
+        tone="routine"
+      />
+      <SuggestionSection
+        id="indoor-heading"
+        title="Indoor Air Hacks"
+        items={advice.indoorHacks}
+        tone="indoor"
+      />
+      <SuggestionSection
+        id="alternatives-heading"
+        title="Sustainable Alternatives"
+        items={advice.alternatives}
+        tone="alt"
+      />
+    </div>
+  );
+}
+
 /**
  * Renders the full plan: air snapshot, then the three suggestion sections, each with its impact.
  * Default export so it can be lazy-loaded with `next/dynamic`.
  */
 export default function Results({ data }: { data: AdviceResponse }) {
   const { snapshot, advice, notices, placeName, source } = data;
+  const origin =
+    source === "ai" ? "Plan written by Gemini AI." : "Plan from built-in smog guidance.";
 
   return (
     <div className="results-body">
-      {notices.map((notice) => (
-        <p key={notice} className="notice">
-          {notice}
-        </p>
-      ))}
-
-      <section aria-labelledby="snapshot-heading" className="card tone-snapshot">
-        <h3 id="snapshot-heading">Today&rsquo;s Air Snapshot</h3>
-        <p className="place">{placeName}</p>
-        {snapshot ? (
-          <div className="snapshot-grid">
-            <AqiBadge aqi={snapshot.usAqi} category={snapshot.category} />
-            <div>
-              <dl className="readings">
-                <div>
-                  <dt>PM2.5</dt>
-                  <dd>{snapshot.pm25} µg/m³</dd>
-                </div>
-                {snapshot.pm10 !== null && (
-                  <div>
-                    <dt>PM10</dt>
-                    <dd>{snapshot.pm10} µg/m³</dd>
-                  </div>
-                )}
-                <div>
-                  <dt>Versus WHO daily guideline</dt>
-                  <dd>{snapshot.whoMultiple}× the limit</dd>
-                </div>
-              </dl>
-              <p className="muted">
-                Reading from {snapshot.observedAt.replace("T", " ")} (local time)
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p>Live readings are unavailable right now.</p>
-        )}
-        <p className="summary">{advice.snapshotSummary}</p>
-      </section>
-
-      <div className="sections">
-        <SuggestionSection
-          id="routine-heading"
-          title="Low-Emission Daily Routine"
-          items={advice.routine}
-          tone="routine"
-        />
-        <SuggestionSection
-          id="indoor-heading"
-          title="Indoor Air Hacks"
-          items={advice.indoorHacks}
-          tone="indoor"
-        />
-        <SuggestionSection
-          id="alternatives-heading"
-          title="Sustainable Alternatives"
-          items={advice.alternatives}
-          tone="alt"
-        />
-      </div>
-
-      <p className="muted">
-        {source === "ai" ? "Plan written by Gemini AI." : "Plan from built-in smog guidance."}{" "}
-        Impact figures are rough estimates.
-      </p>
+      <Notices notices={notices} />
+      <SnapshotCard placeName={placeName} snapshot={snapshot} summary={advice.snapshotSummary} />
+      <SuggestionSections advice={advice} />
+      <p className="muted">{origin} Impact figures are rough estimates.</p>
     </div>
   );
 }

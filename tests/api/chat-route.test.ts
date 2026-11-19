@@ -40,6 +40,19 @@ describe("POST /api/chat", () => {
     expect(generateChatReply).toHaveBeenCalledWith(valid);
   });
 
+  it("accepts a follow-up after a long assistant reply, and caps replies at 2,000 characters", async () => {
+    const follow = (reply: string) => ({
+      messages: [
+        { role: "user", content: "Which mask?" },
+        { role: "assistant", content: reply },
+        { role: "user", content: "And for my kids?" },
+      ],
+    });
+    expect((await post(follow("a".repeat(2000)))).status).toBe(200);
+    const tooLong = await post(follow("a".repeat(2001)));
+    expect(tooLong.status).toBe(400);
+  });
+
   it("accepts a conversation without context", async () => {
     expect((await post({ messages: valid.messages })).status).toBe(200);
   });
@@ -75,7 +88,7 @@ describe("POST /api/chat", () => {
 
   it("rejects invalid JSON, oversized bodies and wrong content types", async () => {
     expect((await post("{nope")).status).toBe(400);
-    expect((await post(JSON.stringify({ pad: "x".repeat(7000) }))).status).toBe(413);
+    expect((await post(JSON.stringify({ pad: "x".repeat(40_000) }))).status).toBe(413);
     expect((await post(valid, { "content-type": "text/plain" })).status).toBe(415);
   });
 

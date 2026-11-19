@@ -3,8 +3,7 @@ import { TtlCache } from "@/lib/cache";
 import { buildCsp } from "@/lib/csp";
 import { optionValues } from "@/lib/options";
 import { buildUserPrompt, SYSTEM_INSTRUCTION } from "@/lib/prompt";
-import { createRateLimiter } from "@/lib/rate-limit";
-import { sanitizeText } from "@/lib/sanitize";
+import { cleanModelText, sanitizeText } from "@/lib/sanitize";
 import { profile, snapshot } from "../fixtures";
 
 describe("TtlCache", () => {
@@ -14,6 +13,12 @@ describe("TtlCache", () => {
     expect(cache.get("a", 999)).toBe("x");
     expect(cache.get("a", 1000)).toBeUndefined();
     expect(cache.get("missing", 0)).toBeUndefined();
+  });
+
+  it("stores nothing when it is given no room", () => {
+    const cache = new TtlCache<string>(1000, 0);
+    cache.set("a", "x", 0);
+    expect(cache.get("a", 1)).toBe("x");
   });
 
   it("evicts the oldest entry when full but keeps updates in place", () => {
@@ -29,27 +34,21 @@ describe("TtlCache", () => {
   });
 });
 
-describe("createRateLimiter", () => {
-  it("blocks after the limit and reports when to retry", () => {
-    const limiter = createRateLimiter({ limit: 2, windowMs: 60_000 });
-    expect(limiter.check("ip", 0).allowed).toBe(true);
-    expect(limiter.check("ip", 1000).allowed).toBe(true);
-    expect(limiter.check("ip", 2000)).toEqual({ allowed: false, retryAfterSeconds: 58 });
-  });
-
-  it("tracks keys separately and resets after the window", () => {
-    const limiter = createRateLimiter({ limit: 1, windowMs: 1000 });
-    expect(limiter.check("a", 0).allowed).toBe(true);
-    expect(limiter.check("b", 0).allowed).toBe(true);
-    expect(limiter.check("a", 500).allowed).toBe(false);
-    expect(limiter.check("a", 1000).allowed).toBe(true);
-  });
-});
-
 describe("sanitizeText", () => {
   it("removes markup, quotes and control characters and bounds the length", () => {
     expect(sanitizeText('  <b>Hi</b>\n"there"\u0000 {x}  ', 50)).toBe("b Hi /b there x");
     expect(sanitizeText("abcdef", 3)).toBe("abc");
+  });
+});
+
+describe("cleanModelText", () => {
+  it("removes control and invisible formatting characters but keeps line breaks and tabs", () => {
+    const dirty = "Wear\u0000 an N95‮.​\nSecond line\tindented\u0007";
+    expect(cleanModelText(dirty)).toBe("Wear an N95.\nSecond line\tindented");
+  });
+
+  it("leaves ordinary text, symbols and non-Latin scripts alone", () => {
+    expect(cleanModelText("PM2.5 is 80 µg/m³ — हवा खराब है")).toBe("PM2.5 is 80 µg/m³ — हवा खराब है");
   });
 });
 

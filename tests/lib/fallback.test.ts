@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { AQI_CATEGORIES, categorize } from "@/lib/aqi";
+import { AQI_CATEGORIES, categorize } from "@/lib/air-quality";
 import { buildFallbackAdvice } from "@/lib/fallback";
 import {
   COMMUTE_OPTIONS,

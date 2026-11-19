@@ -1,0 +1,118 @@
+/* Decorative six-step scale; the level is also stated in words by the badge. */
+.meter {
+  display: flex;
+  gap: 4px;
+}
+
+.meter-seg {
+  flex: 1;
+  height: 10px;
+  border-radius: 999px;
+  background: #dfe6ee;
+}
+
+.meter-0.on {
+  background: #2e9e5b;
+}
+.meter-1.on {
+  background: #e0b400;
+}
+.meter-2.on {
+  background: #f08a00;
+}
+.meter-3.on {
+  background: #d9363e;
+}
+.meter-4.on {
+  background: #7a3fb5;
+}
+.meter-5.on {
+  background: #7a1f3d;
+}
+
+.readings {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  margin: 0 0 10px;
+}
+
+.readings div {
+  padding: 12px 14px;
+  background: var(--page-bg);
+  border-radius: 12px;
+}
+
+.readings dt {
+  color: var(--muted-fg);
+  font-size: 0.85rem;
+}
+
+.readings dd {
+  margin: 2px 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.summary {
+  margin: 16px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.sections {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  align-items: start;
+}
+
+.suggestions {
+  counter-reset: tip;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.suggestions li {
+  position: relative;
+  counter-increment: tip;
+  padding: 12px 0 12px 42px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.suggestions li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.suggestions li::before {
+  content: counter(tip);
+  position: absolute;
+  left: 0;
+  top: 12px;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--tone-accent-bg);
+  color: var(--tone-accent-fg);
+  font-weight: 700;
+}
+
+.suggestions li:first-child::before {
+  top: 0;
+}
+
+.suggestions p {
+  margin: 0 0 8px;
+}
+
+.impact {
+  padding: 8px 12px;
+  background: var(--impact-bg);
+  color: var(--impact-fg);
+  border-left: 4px solid var(--impact-fg);
+  border-radius: 8px;
+}

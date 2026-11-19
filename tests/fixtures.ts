@@ -1,5 +1,5 @@
 import type { AdviceResponse } from "@/lib/advice-service";
-import { categorize, type AirSnapshot } from "@/lib/aqi";
+import { categorize, type AirSnapshot } from "@/lib/air-quality";
 import type { Advice, Profile, Suggestion } from "@/lib/schemas";
 
 export const profile: Profile = {

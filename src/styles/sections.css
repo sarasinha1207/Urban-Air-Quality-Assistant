@@ -1,0 +1,61 @@
+/* Section theming: tinted header bar, an icon chip and numbered tips */
+.tone-snapshot {
+  --tone-bg: var(--snapshot-bg);
+  --tone-fg: var(--snapshot-fg);
+  --tone-accent-bg: var(--snapshot-accent-bg);
+  --tone-accent-fg: var(--snapshot-accent-fg);
+}
+.tone-routine {
+  --tone-bg: var(--routine-bg);
+  --tone-fg: var(--routine-fg);
+  --tone-accent-bg: var(--routine-accent-bg);
+  --tone-accent-fg: var(--routine-accent-fg);
+}
+.tone-indoor {
+  --tone-bg: var(--indoor-bg);
+  --tone-fg: var(--indoor-fg);
+  --tone-accent-bg: var(--indoor-accent-bg);
+  --tone-accent-fg: var(--indoor-accent-fg);
+}
+.tone-alt {
+  --tone-bg: var(--alt-bg);
+  --tone-fg: var(--alt-fg);
+  --tone-accent-bg: var(--alt-accent-bg);
+  --tone-accent-fg: var(--alt-accent-fg);
+}
+
+.tone-snapshot,
+.tone-routine,
+.tone-indoor,
+.tone-alt {
+  border-top-color: var(--tone-accent-bg);
+}
+
+.tone-snapshot > h3,
+.tone-routine > h3,
+.tone-indoor > h3,
+.tone-alt > h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -22px -22px 18px;
+  padding: 14px 22px;
+  background: var(--tone-bg);
+  color: var(--tone-fg);
+  border-radius: 13px 13px 0 0;
+}
+
+.tone-snapshot > h3::before,
+.tone-routine > h3::before,
+.tone-indoor > h3::before,
+.tone-alt > h3::before {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--tone-accent-bg);
+  color: var(--tone-accent-fg);
+  font-size: 1.05rem;
+}

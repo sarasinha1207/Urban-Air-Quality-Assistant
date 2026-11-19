@@ -1,0 +1,137 @@
+/* Dashboard layout: form panel left, results right on wide screens */
+.dashboard {
+  display: grid;
+  margin-top: 24px;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.form-intro {
+  margin: -6px 0 16px;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: var(--link-fg);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.field {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+input[type="text"],
+select {
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-bg);
+  color: var(--surface-fg);
+  font: inherit;
+}
+
+input[type="text"]:focus,
+select:focus {
+  border-color: var(--accent-bg);
+}
+
+.checks {
+  display: grid;
+  gap: 8px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding: 2px 12px;
+  background: var(--page-bg);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+}
+
+.check:hover {
+  border-color: var(--accent-bg);
+}
+
+.check input {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  accent-color: var(--accent-bg);
+}
+
+.check label {
+  flex: 1;
+  margin: 0;
+  padding: 9px 0;
+  font-weight: 500;
+}
+
+.grid {
+  display: grid;
+  gap: 0 16px;
+  grid-template-columns: 1fr;
+}
+
+.geo-status {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+button {
+  min-height: 46px;
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: 2px solid var(--accent-bg);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(11, 79, 138, 0.25);
+}
+
+button.primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent-bg), var(--hero2-bg));
+  color: var(--accent-fg);
+  font-size: 1.05rem;
+}
+
+button.secondary {
+  background: var(--surface-bg);
+  color: var(--link-fg);
+}
+
+button[aria-disabled="true"] {
+  cursor: progress;
+  opacity: 0.85;
+}

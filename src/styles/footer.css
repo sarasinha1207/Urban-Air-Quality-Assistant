@@ -1,0 +1,21 @@
+/* Footer */
+.site-footer {
+  margin-top: 40px;
+  padding: 14px 0;
+  background: var(--footer-bg);
+  color: var(--footer-fg);
+  font-size: 0.8rem;
+}
+
+.site-footer p {
+  margin: 0;
+  text-align: center;
+}
+
+.site-footer a {
+  color: var(--footerlink-fg);
+}
+
+.site-footer a:focus-visible {
+  outline-color: var(--footer-fg);
+}

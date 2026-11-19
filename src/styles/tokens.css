@@ -1,0 +1,62 @@
+/*
+ * Colour tokens. Each `--x-bg` / `--x-fg` pair of literal colours is checked for WCAG AA contrast
+ * by tests/contrast.test.ts, so a failing pair fails CI.
+ */
+:root {
+  color-scheme: light;
+  --page-bg: #eef4fa;
+  --page-fg: #16202a;
+  --surface-bg: #ffffff;
+  --surface-fg: #16202a;
+  --muted-bg: #eef4fa;
+  --muted-fg: #44505c;
+  --accent-bg: #0b4f8a;
+  --accent-fg: #ffffff;
+  --link-bg: #ffffff;
+  --link-fg: #0b4f8a;
+  --hero-bg: #0b3a66;
+  --hero-fg: #ffffff;
+  --hero2-bg: #0e6a78;
+  --hero2-fg: #ffffff;
+  --notice-bg: #fff4d6;
+  --notice-fg: #4a3200;
+  --danger-bg: #fde8e8;
+  --danger-fg: #7a1212;
+  --snapshot-bg: #e9e7fb;
+  --snapshot-fg: #2a226b;
+  --snapshot-accent-bg: #4b3fb5;
+  --snapshot-accent-fg: #ffffff;
+  --routine-bg: #e3eefb;
+  --routine-fg: #0b3a66;
+  --routine-accent-bg: #1a5fa8;
+  --routine-accent-fg: #ffffff;
+  --indoor-bg: #dcf3ef;
+  --indoor-fg: #0a4a44;
+  --indoor-accent-bg: #0b7a6e;
+  --indoor-accent-fg: #ffffff;
+  --alt-bg: #e6f4dc;
+  --alt-fg: #1f4a10;
+  --alt-accent-bg: #3d7a1f;
+  --alt-accent-fg: #ffffff;
+  --impact-bg: #e8f6ee;
+  --impact-fg: #134e2a;
+  --footer-bg: #0b2a4a;
+  --footer-fg: #ffffff;
+  --footerlink-bg: #0b2a4a;
+  --footerlink-fg: #cfe6ff;
+  --aqi-0-bg: #d8f3dc;
+  --aqi-0-fg: #10311a;
+  --aqi-1-bg: #fff3bf;
+  --aqi-1-fg: #3d3000;
+  --aqi-2-bg: #ffd8a8;
+  --aqi-2-fg: #4a2300;
+  --aqi-3-bg: #ffc9c9;
+  --aqi-3-fg: #5c0a0a;
+  --aqi-4-bg: #e5c9ff;
+  --aqi-4-fg: #2d0a4d;
+  --aqi-5-bg: #7a1f3d;
+  --aqi-5-fg: #ffffff;
+  --border: #6b7885;
+  --border-soft: #c9d6e3;
+  --shadow: 0 1px 2px rgba(11, 58, 102, 0.08), 0 10px 28px rgba(11, 58, 102, 0.1);
+}
