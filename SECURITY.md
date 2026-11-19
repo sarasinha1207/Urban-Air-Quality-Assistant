@@ -16,7 +16,7 @@ to reproduce. A first response can be expected within a few days.
 | Prompt injection   | Instructions live in the system instruction; user data goes into a delimited JSON block; model output must match a strict schema and is rendered as plain text. |
 | Browser protection | Nonce-based Content Security Policy, HSTS, `nosniff`, frame denial, a restrictive Permissions-Policy and cross-origin isolation headers.                        |
 | Privacy            | No database, no cookies, no stored inputs. Rate-limit keys are hashed client addresses. Device coordinates are rounded to about 1 km.                           |
-| Dependencies       | `npm audit` runs in CI on every push, Dependabot proposes updates weekly and CodeQL scans the code.                                                             |
+| Dependencies       | `npm audit` runs in CI on every push, CodeQL scans the code.                                                             |
 
 ## Supported versions
 
